@@ -23,6 +23,16 @@ defmodule PuppyLog.Daily.Routine do
     :follow_up_minutes
   ]
 
+  @doc "All routine kinds."
+  def kinds, do: @kinds
+
+  @doc false
+  # Today's occurrence follows the routine; past days never change.
+  def replan_today(_changeset, routine, _context) do
+    :ok = PuppyLog.Daily.Planner.replan_today(routine)
+    {:ok, routine}
+  end
+
   sqlite do
     table "routines"
     repo PuppyLog.Repo
@@ -46,18 +56,22 @@ defmodule PuppyLog.Daily.Routine do
       primary? true
       accept @fields
       change relate_actor(:created_by)
+      # Creation time from the household clock: planning compares it with starts_at.
+      change set_attribute(:inserted_at, &PuppyLog.Clock.utc_now/0)
     end
 
     update :update do
       primary? true
       accept @fields
       require_atomic? false
+      change after_action(&__MODULE__.replan_today/3)
     end
 
     update :archive do
       accept []
       require_atomic? false
-      change set_attribute(:archived_at, &DateTime.utc_now/0)
+      change set_attribute(:archived_at, &PuppyLog.Clock.utc_now/0)
+      change after_action(&__MODULE__.replan_today/3)
     end
   end
 

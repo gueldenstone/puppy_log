@@ -20,6 +20,25 @@ defmodule PuppyLog.Fixtures do
   end
 
   @doc """
+  Pins `PuppyLog.Clock.now/0` to `now` (any time zone) for the rest of the
+  test via the `:clock_now` override. Use only in `async: false` tests.
+  """
+  def pin_clock(%DateTime{} = now) do
+    Application.put_env(:puppy_log, :pinned_now, now)
+    Application.put_env(:puppy_log, :clock_now, {__MODULE__, :pinned_now})
+
+    ExUnit.Callbacks.on_exit(fn ->
+      Application.delete_env(:puppy_log, :clock_now)
+      Application.delete_env(:puppy_log, :pinned_now)
+    end)
+
+    now
+  end
+
+  @doc false
+  def pinned_now, do: Application.fetch_env!(:puppy_log, :pinned_now)
+
+  @doc """
   A fake browser push subscription. Keeps the private key so tests can decrypt
   what the server sent.
   """
