@@ -84,6 +84,18 @@ defmodule PuppyLog.Daily.PlannerTest do
     assert on(~D[2026-11-11], lukas) == []
   end
 
+  test "planning broadcasts occurrences:changed", %{lukas: lukas} do
+    routine = routine(lukas, %{starts_at: ~T[10:00:00], weekdays: [1, 2, 3, 5]})
+    PuppyLogWeb.Endpoint.subscribe("occurrences:changed")
+
+    Daily.ensure_day(~D[2026-11-13], [])
+    assert_receive %{topic: "occurrences:changed", payload: %{data: %{date: ~D[2026-11-13]}}}
+
+    # a routine edit that adds today's weekday plans today's occurrence
+    {:ok, _} = Daily.update_routine(routine, %{weekdays: [4]}, actor: lukas)
+    assert_receive %{topic: "occurrences:changed", payload: %{data: %{date: @today}}}
+  end
+
   test "idempotent", %{lukas: lukas} do
     routine(lukas, %{starts_at: ~T[10:00:00]})
 

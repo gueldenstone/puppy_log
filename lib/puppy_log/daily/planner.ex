@@ -107,14 +107,15 @@ defmodule PuppyLog.Daily.Planner do
   defp create_all(inputs) do
     # Upsert on [:routine_id, :date] without changing any field, so a
     # concurrent planner run cannot fail or overwrite an outcome.
-    %Ash.BulkResult{status: :success} =
-      Ash.bulk_create(inputs, Occurrence, :plan,
-        authorize?: false,
-        return_errors?: true,
-        stop_on_error?: true
-      )
-
-    :ok
+    case Ash.bulk_create(inputs, Occurrence, :plan,
+           authorize?: false,
+           notify?: true,
+           return_errors?: true,
+           stop_on_error?: true
+         ) do
+      %Ash.BulkResult{status: :success} -> :ok
+      %Ash.BulkResult{errors: errors} -> raise Ash.Error.to_error_class(errors)
+    end
   end
 
   defp plannable?(routine, date, arrival) do
