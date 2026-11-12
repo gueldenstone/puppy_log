@@ -6,7 +6,7 @@
 
 # General application configuration
 import Config
-config :cinder, default_theme: "daisy_ui"
+config :cinder, default_theme: PuppyLogWeb.CinderTheme
 config :puppy_log, PuppyLog.Repo, timeout: 15_000, busy_timeout: 16_000
 
 # These enable behaviors that will become the default in the next major
@@ -63,8 +63,30 @@ config :spark,
 config :puppy_log,
   ecto_repos: [PuppyLog.Repo],
   generators: [timestamp_type: :utc_datetime],
-  ash_domains: [PuppyLog.Accounts],
+  ash_domains: [PuppyLog.Accounts, PuppyLog.Notifications, PuppyLog.Puppy],
   ash_authentication: [return_error_on_invalid_magic_link_token?: true]
+
+# Everything user-facing happens in German local time.
+config :elixir, :time_zone_database, Tz.TimeZoneDatabase
+config :puppy_log, :time_zone, "Europe/Berlin"
+
+# German UI texts (also for Cinder's built-in labels)
+config :gettext, :default_locale, "de"
+config :puppy_log, PuppyLogWeb.Gettext, default_locale: "de"
+
+# Where uploaded photos are stored (overridden in runtime.exs for prod)
+config :puppy_log, :uploads_dir, Path.expand("../uploads", __DIR__)
+
+# Web Push (VAPID). Keys for dev/test live in the env-specific config files,
+# production keys come from environment variables (see runtime.exs).
+# The subject must be a mailto: or https: URL, Apple rejects anything else.
+config :web_push_ex, :vapid, subject: "mailto:puppy-log@example.com"
+
+# Extra options for the HTTP client used to deliver pushes (Req.Test in tests).
+config :puppy_log, PuppyLog.Notifications.Push, req_options: []
+
+# Remember-me and session cookies are only sent over HTTPS when this is true.
+config :puppy_log, :secure_cookies, true
 
 # Configure the endpoint
 config :puppy_log, PuppyLogWeb.Endpoint,

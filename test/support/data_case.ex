@@ -24,11 +24,13 @@ defmodule PuppyLog.DataCase do
       import Ecto.Changeset
       import Ecto.Query
       import PuppyLog.DataCase
+      import PuppyLog.Fixtures
     end
   end
 
   setup tags do
     PuppyLog.DataCase.setup_sandbox(tags)
+    Req.Test.set_req_test_from_context(tags)
     :ok
   end
 

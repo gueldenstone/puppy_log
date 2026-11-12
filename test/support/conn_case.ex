@@ -28,11 +28,26 @@ defmodule PuppyLogWeb.ConnCase do
       import Plug.Conn
       import Phoenix.ConnTest
       import PuppyLogWeb.ConnCase
+      import PuppyLog.Fixtures
+      import Phoenix.LiveViewTest
     end
   end
 
   setup tags do
     PuppyLog.DataCase.setup_sandbox(tags)
+    Req.Test.set_req_test_from_context(tags)
     {:ok, conn: Phoenix.ConnTest.build_conn()}
+  end
+
+  @doc "Creates a user and signs them in on the conn."
+  def register_and_sign_in(%{conn: conn}) do
+    user = PuppyLog.Fixtures.user_fixture(%{name: "Lukas"}) |> PuppyLog.Fixtures.sign_in()
+
+    conn =
+      conn
+      |> Phoenix.ConnTest.init_test_session(%{})
+      |> AshAuthentication.Plug.Helpers.store_in_session(user)
+
+    %{conn: conn, user: user}
   end
 end

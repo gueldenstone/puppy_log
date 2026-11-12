@@ -8,7 +8,11 @@ defmodule PuppyLogWeb.Endpoint do
     store: :cookie,
     key: "_puppy_log_key",
     signing_salt: "TdidD6Wh",
-    same_site: "Lax"
+    same_site: "Lax",
+    # Persist across app restarts: iOS drops session cookies when a home
+    # screen app is closed. The remember-me cookie is the second safety net.
+    max_age: 60 * 60 * 24 * 365,
+    secure: Application.compile_env(:puppy_log, :secure_cookies, true)
   ]
 
   socket "/live", Phoenix.LiveView.Socket,

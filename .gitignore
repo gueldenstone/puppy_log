@@ -39,3 +39,10 @@ npm-debug.log
 *.db
 *.db-*
 
+
+# Uploaded photos (dev) and test uploads
+/uploads/
+/tmp/
+
+# Python bytecode (docs/design/entwuerfe/generator)
+__pycache__/

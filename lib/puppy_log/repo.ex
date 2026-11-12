@@ -7,4 +7,8 @@ defmodule PuppyLog.Repo do
   # driver sets by default.
   @impl true
   def write_transactions?, do: true
+
+  # SQLite is bundled with exqlite, so the version is known.
+  @impl true
+  def min_sqlite_version, do: %Version{major: 3, minor: 53, patch: 4}
 end

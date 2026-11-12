@@ -23,6 +23,26 @@ end
 config :puppy_log, PuppyLogWeb.Endpoint,
   http: [port: String.to_integer(System.get_env("PORT", "4000"))]
 
+# VAPID keys for Web Push. Generate a pair with `mix puppy_log.gen.vapid`.
+# In dev/test the committed keys are used unless these variables are set.
+vapid =
+  [
+    public_key: System.get_env("VAPID_PUBLIC_KEY"),
+    private_key: System.get_env("VAPID_PRIVATE_KEY"),
+    subject: System.get_env("VAPID_SUBJECT")
+  ]
+  |> Enum.reject(fn {_key, value} -> is_nil(value) end)
+
+if vapid != [] do
+  config :web_push_ex, :vapid, Keyword.merge(Application.get_env(:web_push_ex, :vapid, []), vapid)
+end
+
+if config_env() == :prod do
+  for var <- ~w(VAPID_PUBLIC_KEY VAPID_PRIVATE_KEY VAPID_SUBJECT), System.get_env(var) == nil do
+    raise "environment variable #{var} is missing (generate keys with: mix puppy_log.gen.vapid)"
+  end
+end
+
 if config_env() == :dev do
   # Reload browser tabs when matching files change.
   config :puppy_log, PuppyLogWeb.Endpoint,
@@ -47,6 +67,8 @@ if config_env() == :prod do
       environment variable DATABASE_PATH is missing.
       For example: /etc/puppy_log/puppy_log.db
       """
+
+  config :puppy_log, :uploads_dir, System.get_env("UPLOADS_DIR", "/data/uploads")
 
   config :puppy_log, PuppyLog.Repo,
     database: database_path,

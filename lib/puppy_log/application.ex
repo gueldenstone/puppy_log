@@ -14,8 +14,7 @@ defmodule PuppyLog.Application do
        repos: Application.fetch_env!(:puppy_log, :ecto_repos), skip: skip_migrations?()},
       {DNSCluster, query: Application.get_env(:puppy_log, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: PuppyLog.PubSub},
-      # Start a worker by calling: PuppyLog.Worker.start_link(arg)
-      # {PuppyLog.Worker, arg},
+      {Task.Supervisor, name: PuppyLog.TaskSupervisor},
       # Start to serve requests, typically the last entry
       PuppyLogWeb.Endpoint,
       {AshAuthentication.Supervisor, [otp_app: :puppy_log]}

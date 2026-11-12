@@ -53,6 +53,16 @@ config :puppy_log, PuppyLogWeb.Endpoint,
 # configured to run both http and https servers on
 # different ports.
 
+# Dev-only VAPID keys. Never use these in production.
+config :web_push_ex, :vapid,
+  public_key:
+    "BHvzt2cBXSZdBnOglwXukAUcXeatJAgHV0r2PqqgxttexkVVEGet89sB9aFndKMiSCUF0xll_z957S75YcwTyN4",
+  private_key: "evy7O2MhxOqm2IQ2aV42r6E_TC40RSwREXyRNJosQhc",
+  subject: "mailto:puppy-log@example.com"
+
+# Safari refuses secure cookies on plain http://localhost
+config :puppy_log, :secure_cookies, false
+
 # Enable dev routes for dashboard and mailbox
 config :puppy_log, dev_routes: true, token_signing_secret: "7JvVEUWgigBgAAnwIjw5a7HWqnmvabXd"
 

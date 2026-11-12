@@ -44,3 +44,14 @@ config :phoenix_live_view,
 # Sort query params output of verified routes for robust url comparisons
 config :phoenix,
   sort_verified_routes_query_params: true
+
+config :web_push_ex, :vapid,
+  public_key:
+    "BMlznDyBqo4HHkPJbv2JaJnvHe5_BknpWWRVGkRXx67N_YOFfZ8vXrWnmkmBoISZiNG8FIm5_0umcy73I5Nx0QE",
+  private_key: "fEcydgrVdDbfxcn0Ax8h7yRMvDyJiErI3sCSuLAKrC8",
+  subject: "mailto:test@example.com"
+
+config :puppy_log, PuppyLog.Notifications.Push,
+  req_options: [plug: {Req.Test, PuppyLog.Notifications.Push}, retry: false]
+
+config :puppy_log, :uploads_dir, Path.expand("../tmp/test_uploads", __DIR__)
