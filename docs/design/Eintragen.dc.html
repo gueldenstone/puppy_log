@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Ereignis eintragen</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+button,input{font-family:inherit}
+a{color:inherit;text-decoration:none}
+</style>
+</helmet>
+<div style="width:390px;height:844px;box-sizing:border-box;display:flex;flex-direction:column;background:#F3F5F2;color:#14201B;font-family:Inter,system-ui,sans-serif;padding:24px 16px 24px;gap:16px">
+<header style="display:flex;align-items:center;gap:8px">
+<a href="Main.dc.html" aria-label="Schließen" style="width:44px;height:44px;margin-left:-8px;display:flex;align-items:center;justify-content:center;color:#14201B">
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+</a>
+<h1 style="margin:0;font-family:'Space Grotesk',sans-serif;font-size:22px;line-height:28px;font-weight:600">Ereignis eintragen</h1>
+</header>
+
+<section>
+<div style="font-size:13px;line-height:18px;color:#55645D;font-weight:500;padding:0 2px 8px">Was ist passiert?</div>
+<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px">
+<sc-for list="{{ types }}" as="t" hint-placeholder-count="8">
+<button onClick="{{ t.pick }}" aria-label="{{ t.label }}" style="{{ t.tileStyle }}">
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{ t.d }}"/></svg>
+<span style="font-size:12px;line-height:16px;font-weight:600">{{ t.label }}</span>
+</button>
+</sc-for>
+</div>
+</section>
+
+<sc-if value="{{ showOrt }}" hint-placeholder-val="{{ true }}">
+<section>
+<div style="font-size:13px;line-height:18px;color:#55645D;font-weight:500;padding:0 2px 8px">Wo?</div>
+<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px">
+<button onClick="{{ pickOut }}" style="{{ outStyle }}">Draußen</button>
+<button onClick="{{ pickIn }}" style="{{ inStyle }}">Drinnen</button>
+</div>
+<div style="font-size:13px;line-height:18px;color:#55645D;padding:8px 2px 0">{{ ortHint }}</div>
+</section>
+</sc-if>
+
+<section style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px">
+<div style="background:#fff;border:1px solid #DDE3DE;border-radius:14px;padding:10px 14px;min-height:56px;box-sizing:border-box">
+<div style="font-size:12px;line-height:16px;color:#55645D">Wann</div>
+<div style="font-size:15px;line-height:22px;font-weight:500">Jetzt, 10:22</div>
+</div>
+<div style="background:#fff;border:1px solid #DDE3DE;border-radius:14px;padding:10px 14px;min-height:56px;box-sizing:border-box">
+<div style="font-size:12px;line-height:16px;color:#55645D">Wer</div>
+<div style="font-size:15px;line-height:22px;font-weight:500">Du</div>
+</div>
+</section>
+
+<sc-if value="{{ hasRoutine }}" hint-placeholder-val="{{ true }}">
+<section style="background:#fff;border:1px solid #DDE3DE;border-radius:14px;padding:6px 14px 6px 6px;display:flex;align-items:center;gap:6px">
+<button onClick="{{ toggleLink }}" aria-pressed="{{ linkOn }}" aria-label="Fällige Routine gleich abhaken" style="width:44px;height:44px;background:none;border:0;padding:0;display:flex;align-items:center;justify-content:center;cursor:pointer">
+<span style="{{ linkBoxStyle }}">
+<sc-if value="{{ linkOn }}" hint-placeholder-val="{{ true }}">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg>
+</sc-if>
+</span>
+</button>
+<div style="flex:1;min-width:0">
+<div style="font-size:14px;line-height:20px;font-weight:500">Routine gleich abhaken</div>
+<div style="font-size:13px;line-height:18px;color:#55645D">{{ routineName }}</div>
+</div>
+</section>
+</sc-if>
+
+<section>
+<label for="note" style="display:block;font-size:13px;line-height:18px;color:#55645D;font-weight:500;padding:0 2px 8px">Notiz</label>
+<input id="note" type="text" placeholder="Optional, zum Beispiel nach dem Spielen" style="width:100%;box-sizing:border-box;height:48px;border:1px solid #C5CEC8;border-radius:12px;padding:0 14px;font-size:15px;background:#fff;color:#14201B">
+</section>
+
+<div style="flex:1"></div>
+<a href="Main.dc.html" style="height:52px;border-radius:14px;background:#0E6B52;color:#fff;font-size:16px;font-weight:600;display:flex;align-items:center;justify-content:center">Eintragen</a>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const s = this.state || {};
+    const type = s.type || 'pipi';
+    const ort = s.ort || 'draussen';
+    const link = s.link === undefined ? true : s.link;
+    const defs = [
+      { id: 'pipi', label: 'Pipi', c: '#1D5FA8', bg: '#E3EEF9', d: 'M12 2.7l5.7 5.7a8 8 0 1 1-11.4 0z' },
+      { id: 'kaka', label: 'Kaka', c: '#7A4A1E', bg: '#F3E7DA', d: 'M8 20h8a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4z M9 15h6a2 2 0 0 0 0-4H9a2 2 0 0 0 0 4z M11 10h2a2 2 0 0 0 0-4h-2a2 2 0 0 0 0 4z' },
+      { id: 'mahlzeit', label: 'Mahlzeit', c: '#14201B', bg: '#E4EAE6', d: 'M3 11h18a9 9 0 0 1-18 0z' },
+      { id: 'gassi', label: 'Gassi', c: '#14201B', bg: '#E4EAE6', d: 'M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z M12 12a2 2 0 1 0 0-4 2 2 0 0 0 0 4z' },
+      { id: 'schlaf', label: 'Schlaf', c: '#14201B', bg: '#E4EAE6', d: 'M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z' },
+      { id: 'spiel', label: 'Spiel', c: '#14201B', bg: '#E4EAE6', d: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z M4 8c5 1 11 1 16 0 M4 16c5-1 11-1 16 0' },
+      { id: 'erbrechen', label: 'Erbrechen', c: '#14201B', bg: '#E4EAE6', d: 'M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z M12 9v4 M12 17h.01' },
+      { id: 'anderes', label: 'Anderes', c: '#14201B', bg: '#E4EAE6', d: 'M12 5v14 M5 12h14' },
+    ];
+    const types = defs.map((t) => {
+      const sel = t.id === type;
+      return {
+        label: t.label,
+        d: t.d,
+        tileStyle: 'box-sizing:border-box;height:76px;border-radius:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;cursor:pointer;padding:0;' +
+          'color:' + (sel ? t.c : '#14201B') + ';background:' + (sel ? t.bg : '#fff') + ';border:2px solid ' + (sel ? t.c : '#DDE3DE'),
+        pick: () => this.setState({ type: t.id }),
+      };
+    });
+    const showOrt = type === 'pipi' || type === 'kaka';
+    const seg = (on, danger) => 'height:48px;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;box-sizing:border-box;border:2px solid ' +
+      (on ? (danger ? '#A32A1C' : '#0E6B52') : '#DDE3DE') + ';background:' + (on ? (danger ? '#FBE4E0' : '#D7EDE4') : '#fff') + ';color:' + (on ? (danger ? '#A32A1C' : '#0E6B52') : '#14201B');
+    const names = { pipi: 'Pipi-Runde, fällig seit 10:00', mahlzeit: 'Mittagessen, 13:00' };
+    const hasRoutine = !(showOrt && ort === 'drinnen') && !!names[type];
+    return {
+      types,
+      showOrt,
+      outStyle: seg(ort === 'draussen', false),
+      inStyle: seg(ort === 'drinnen', true),
+      pickOut: () => this.setState({ ort: 'draussen' }),
+      pickIn: () => this.setState({ ort: 'drinnen' }),
+      ortHint: ort === 'draussen' ? 'Zählt für die Stubenreinheit.' : 'Wird als Unfall gezählt und erfüllt keine Routine.',
+      hasRoutine,
+      routineName: names[type] || '',
+      linkOn: link,
+      toggleLink: () => this.setState({ link: !link }),
+      linkBoxStyle: 'width:28px;height:28px;box-sizing:border-box;border-radius:14px;display:flex;align-items:center;justify-content:center;' +
+        (link ? 'background:#0E6B52;border:2px solid #0E6B52' : 'background:#fff;border:2px solid #6B7B73'),
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Einrichten</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+button{font-family:inherit}
+a{color:inherit;text-decoration:none}
+</style>
+</helmet>
+<div style="width:390px;height:844px;box-sizing:border-box;display:flex;flex-direction:column;background:#F3F5F2;color:#14201B;font-family:Inter,system-ui,sans-serif;padding:32px 16px 24px;gap:12px">
+<header style="padding:0 4px 8px">
+<h1 style="margin:0;font-family:'Space Grotesk',sans-serif;font-size:30px;line-height:36px;font-weight:600">Willkommen bei Bruno</h1>
+<div style="font-size:15px;line-height:22px;color:#55645D;margin-top:4px">Einmal einrichten, danach läuft alles auf euren beiden Handys.</div>
+</header>
+
+<section style="background:#fff;border:1px solid #DDE3DE;border-radius:16px;padding:16px;display:flex;gap:14px">
+<span aria-hidden="true" style="flex:none;width:28px;height:28px;border-radius:14px;background:#0E6B52;display:flex;align-items:center;justify-content:center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span>
+<div>
+<h2 style="margin:0;font-size:16px;line-height:22px;font-weight:600">Angemeldet</h2>
+<div style="font-size:14px;line-height:20px;color:#55645D;margin-top:2px">Dein Link hat dich angemeldet. Dieses Gerät bleibt eingeloggt, ein Passwort brauchst du nicht.</div>
+</div>
+</section>
+
+<section style="background:#fff;border:1px solid #DDE3DE;border-radius:16px;padding:16px;display:flex;gap:14px">
+<span aria-hidden="true" style="flex:none;width:28px;height:28px;border-radius:14px;background:#D7EDE4;color:#0B4F3D;font-size:14px;font-weight:600;display:flex;align-items:center;justify-content:center">2</span>
+<div style="flex:1">
+<h2 style="margin:0;font-size:16px;line-height:22px;font-weight:600">Zum Home-Bildschirm hinzufügen</h2>
+<div style="font-size:14px;line-height:20px;color:#55645D;margin-top:2px">Öffne diese Seite in Safari, tippe auf Teilen und dann auf „Zum Home-Bildschirm“. Starte Puppy Log danach von dort.</div>
+<div style="display:flex;align-items:center;gap:10px;margin-top:10px;background:#F3F5F2;border-radius:12px;padding:10px 12px;font-size:13px;line-height:18px;color:#14201B">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1D5FA8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M8 7l4-4 4 4M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg>
+Nur als Home-Bildschirm-App kann iOS Erinnerungen zustellen.
+</div>
+</div>
+</section>
+
+<section style="background:#fff;border:1px solid #DDE3DE;border-radius:16px;padding:16px;display:flex;gap:14px">
+<span aria-hidden="true" style="flex:none;width:28px;height:28px;border-radius:14px;background:#D7EDE4;color:#0B4F3D;font-size:14px;font-weight:600;display:flex;align-items:center;justify-content:center">3</span>
+<div style="flex:1">
+<h2 style="margin:0;font-size:16px;line-height:22px;font-weight:600">Erinnerungen erlauben</h2>
+<div style="font-size:14px;line-height:20px;color:#55645D;margin-top:2px">Damit meldet sich Bruno, wenn eine Routine fällig ist oder die andere Person sie schon erledigt hat.</div>
+<div style="margin-top:12px">
+<sc-if value="{{ notGranted }}" hint-placeholder-val="{{ true }}">
+<button onClick="{{ grant }}" style="height:48px;padding:0 20px;border:0;border-radius:12px;background:#0E6B52;color:#fff;font-size:15px;font-weight:600;cursor:pointer">Benachrichtigungen erlauben</button>
+</sc-if>
+<sc-if value="{{ granted }}" hint-placeholder-val="{{ false }}">
+<div style="display:inline-flex;align-items:center;gap:8px;height:48px;padding:0 16px;border-radius:12px;background:#D7EDE4;color:#0B4F3D;font-size:15px;font-weight:600">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg>Erlaubt</div>
+</sc-if>
+</div>
+</div>
+</section>
+
+<section style="background:#fff;border:1px solid #DDE3DE;border-radius:16px;padding:16px;display:flex;gap:14px">
+<span aria-hidden="true" style="flex:none;width:28px;height:28px;border-radius:14px;background:#D7EDE4;color:#0B4F3D;font-size:14px;font-weight:600;display:flex;align-items:center;justify-content:center">4</span>
+<div style="flex:1">
+<h2 style="margin:0;font-size:16px;line-height:22px;font-weight:600">Testen</h2>
+<div style="font-size:14px;line-height:20px;color:#55645D;margin-top:2px">{{ testHint }}</div>
+<div style="margin-top:12px">
+<button onClick="{{ sendTest }}" disabled="{{ testDisabled }}" style="{{ testStyle }}">Test-Benachrichtigung senden</button>
+</div>
+</div>
+</section>
+
+<div style="flex:1"></div>
+<a href="Main.dc.html" style="height:52px;border-radius:14px;background:#0E6B52;color:#fff;font-size:16px;font-weight:600;display:flex;align-items:center;justify-content:center">Fertig, los geht’s</a>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const s = this.state || {};
+    const granted = !!s.granted;
+    const tested = !!s.tested;
+    return {
+      granted,
+      notGranted: !granted,
+      grant: () => this.setState({ granted: true }),
+      sendTest: () => this.setState({ tested: true }),
+      testDisabled: !granted,
+      testHint: tested
+        ? 'Gesendet. Sperr den Bildschirm kurz, die Nachricht sollte gleich auf beiden Handys erscheinen.'
+        : 'Schickt eine Nachricht an alle Geräte im Haushalt, damit ihr seht, dass es klappt.',
+      testStyle: 'height:48px;padding:0 20px;border-radius:12px;font-size:15px;font-weight:600;' +
+        (granted ? 'cursor:pointer;background:#fff;color:#0E6B52;border:2px solid #0E6B52' : 'cursor:not-allowed;background:#E4EAE6;color:#55645D;border:2px solid #E4EAE6'),
+    };
+  }
+}
+</script>
+</body>
+</html>

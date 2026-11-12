@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Lernen</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+button{font-family:inherit}
+a{color:inherit;text-decoration:none}
+</style>
+</helmet>
+<div style="width:390px;height:844px;box-sizing:border-box;display:flex;flex-direction:column;background:#F3F5F2;color:#14201B;font-family:Inter,system-ui,sans-serif">
+<main style="flex:1;min-height:0;overflow:hidden;padding:24px 16px 0;display:flex;flex-direction:column;gap:12px">
+<header style="padding:0 4px">
+<h1 style="margin:0;font-family:'Space Grotesk',sans-serif;font-size:26px;line-height:30px;font-weight:600">Lernen</h1>
+<div style="font-size:14px;line-height:20px;color:#55645D">Sozialisierung und Kommandos</div>
+</header>
+
+<div style="background:#E4EAE6;border-radius:14px;padding:4px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px">
+<button onClick="{{ pickSoz }}" aria-pressed="{{ isSoz }}" style="{{ sozStyle }}">Sozialisierung</button>
+<button onClick="{{ pickKom }}" aria-pressed="{{ isKom }}" style="{{ komStyle }}">Kommandos</button>
+</div>
+
+<sc-if value="{{ isSoz }}" hint-placeholder-val="{{ true }}">
+<section style="background:#fff;border:1px solid #DDE3DE;border-radius:16px;padding:16px">
+<div style="display:flex;align-items:baseline;justify-content:space-between">
+<div style="font-size:13px;line-height:18px;color:#55645D;font-weight:500">Erlebt und bewertet</div>
+<div style="font-size:13px;color:#55645D;font-variant-numeric:tabular-nums">34 %</div>
+</div>
+<div style="font-family:'Space Grotesk',sans-serif;font-size:28px;line-height:34px;font-weight:600">34 von 100</div>
+<div role="presentation" style="height:8px;border-radius:4px;background:#E4EAE6;margin-top:10px;overflow:hidden"><div style="width:34%;height:100%;border-radius:4px;background:#0E6B52"></div></div>
+</section>
+<section style="background:#fff;border:1px solid #DDE3DE;border-radius:16px;padding:6px 16px">
+<sc-for list="{{ cats }}" as="c" hint-placeholder-count="5">
+<div style="display:flex;align-items:center;gap:12px;min-height:48px;border-top:1px solid #E6EBE7">
+<div style="width:96px;font-size:15px;font-weight:500">{{ c.name }}</div>
+<div role="presentation" style="flex:1;height:8px;border-radius:4px;background:#E4EAE6;overflow:hidden"><div style="{{ c.barStyle }}"></div></div>
+<div style="width:40px;text-align:right;font-size:13px;color:#55645D;font-variant-numeric:tabular-nums">{{ c.count }}</div>
+</div>
+</sc-for>
+</section>
+<section style="background:#fff;border:1px solid #DDE3DE;border-radius:16px;padding:12px 16px 4px">
+<div style="font-size:13px;line-height:18px;color:#55645D;font-weight:500;margin-bottom:4px">Zuletzt bewertet</div>
+<div style="display:flex;align-items:center;gap:12px;min-height:52px;border-top:1px solid #E6EBE7">
+<div style="flex:1;min-width:0"><div style="font-size:15px;line-height:20px;font-weight:500">Staubsauger</div><div style="font-size:12.5px;line-height:17px;color:#55645D">Mia · gestern</div></div>
+<div role="img" aria-label="Reaktion 3 von 5" style="display:flex;gap:4px"><span style="width:10px;height:10px;border-radius:5px;background:#0E6B52"></span><span style="width:10px;height:10px;border-radius:5px;background:#0E6B52"></span><span style="width:10px;height:10px;border-radius:5px;background:#0E6B52"></span><span style="width:10px;height:10px;border-radius:5px;border:2px solid #9AA8A0;box-sizing:border-box"></span><span style="width:10px;height:10px;border-radius:5px;border:2px solid #9AA8A0;box-sizing:border-box"></span></div>
+</div>
+<div style="display:flex;align-items:center;gap:12px;min-height:52px;border-top:1px solid #E6EBE7">
+<div style="flex:1;min-width:0"><div style="font-size:15px;line-height:20px;font-weight:500">Straßenbahn</div><div style="font-size:12.5px;line-height:17px;color:#55645D">Du · Dienstag</div></div>
+<div role="img" aria-label="Reaktion 4 von 5" style="display:flex;gap:4px"><span style="width:10px;height:10px;border-radius:5px;background:#0E6B52"></span><span style="width:10px;height:10px;border-radius:5px;background:#0E6B52"></span><span style="width:10px;height:10px;border-radius:5px;background:#0E6B52"></span><span style="width:10px;height:10px;border-radius:5px;background:#0E6B52"></span><span style="width:10px;height:10px;border-radius:5px;border:2px solid #9AA8A0;box-sizing:border-box"></span></div>
+</div>
+</section>
+</sc-if>
+
+<sc-if value="{{ isKom }}" hint-placeholder-val="{{ false }}">
+<section style="background:#fff;border:1px solid #DDE3DE;border-radius:16px;padding:16px">
+<div style="font-size:13px;line-height:18px;color:#55645D;font-weight:500">Training diese Woche</div>
+<div style="display:flex;gap:24px;margin-top:4px">
+<div><div style="font-family:'Space Grotesk',sans-serif;font-size:28px;line-height:34px;font-weight:600">5</div><div style="font-size:12.5px;color:#55645D">Einheiten</div></div>
+<div><div style="font-family:'Space Grotesk',sans-serif;font-size:28px;line-height:34px;font-weight:600">22 Min</div><div style="font-size:12.5px;color:#55645D">insgesamt</div></div>
+<div><div style="font-family:'Space Grotesk',sans-serif;font-size:28px;line-height:34px;font-weight:600">80 %</div><div style="font-size:12.5px;color:#55645D">Erfolg</div></div>
+</div>
+</section>
+<section style="background:#fff;border:1px solid #DDE3DE;border-radius:16px;padding:6px 16px">
+<sc-for list="{{ cmds }}" as="k" hint-placeholder-count="5">
+<div style="display:flex;align-items:center;gap:12px;min-height:60px;border-top:1px solid #E6EBE7">
+<div style="flex:1;min-width:0">
+<div style="font-size:15px;line-height:20px;font-weight:500">{{ k.name }}</div>
+<div role="img" aria-label="{{ k.aria }}" style="display:flex;gap:3px;margin-top:6px"><span style="{{ k.s1 }}"></span><span style="{{ k.s2 }}"></span><span style="{{ k.s3 }}"></span><span style="{{ k.s4 }}"></span></div>
+</div>
+<span style="{{ k.chipStyle }}">{{ k.level }}</span>
+</div>
+</sc-for>
+</section>
+<a href="Lernen.dc.html" style="height:52px;border-radius:14px;background:#0E6B52;color:#fff;font-size:16px;font-weight:600;display:flex;align-items:center;justify-content:center">Übungseinheit starten</a>
+</sc-if>
+</main>
+
+<nav aria-label="Hauptnavigation" style="height:72px;box-sizing:border-box;background:#fff;border-top:1px solid #DDE3DE;display:grid;grid-template-columns:repeat(4,minmax(0,1fr))">
+<a href="Main.dc.html" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:#55645D;font-size:12px;font-weight:500">
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5L12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>Heute</a>
+<a href="Verlauf.dc.html" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:#55645D;font-size:12px;font-weight:500">
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 20v-8M12 20V4M18 20V9"/></svg>Verlauf</a>
+<a href="Gesundheit.dc.html" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:#55645D;font-size:12px;font-weight:500">
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1 1.1L12 21l7.8-7.5 1-1.1a5.5 5.5 0 0 0 0-7.8z"/></svg>Gesundheit</a>
+<a href="Lernen.dc.html" aria-current="page" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:#0E6B52;font-size:12px;font-weight:600">
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/></svg>Lernen</a>
+</nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const tab = (this.state && this.state.tab) || 'soz';
+    const seg = (on) => 'height:44px;border:0;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;' +
+      (on ? 'background:#fff;color:#0E6B52;box-shadow:0 1px 2px rgba(20,32,27,0.15)' : 'background:transparent;color:#55645D');
+    const cats = [
+      { name: 'Menschen', n: 9 },
+      { name: 'Tiere', n: 6 },
+      { name: 'Geräusche', n: 8 },
+      { name: 'Untergründe', n: 7 },
+      { name: 'Orte', n: 4 },
+    ].map((c) => ({
+      name: c.name,
+      count: c.n + ' / 20',
+      barStyle: 'height:100%;border-radius:4px;background:#0E6B52;width:' + (c.n * 5) + '%',
+    }));
+    const levels = {
+      1: { label: 'Neu', style: 'color:#55645D;background:#E4EAE6' },
+      2: { label: 'Übt', style: 'color:#8A5200;background:#FDF0D5' },
+      3: { label: 'Sicher', style: 'color:#0E6B52;background:#D7EDE4' },
+      4: { label: 'Unter Ablenkung', style: 'color:#0B4F3D;background:#BFE3D5' },
+    };
+    const cmds = [
+      { name: 'Name hören', l: 4 },
+      { name: 'Sitz', l: 3 },
+      { name: 'Platz', l: 2 },
+      { name: 'Komm', l: 2 },
+      { name: 'Bleib', l: 1 },
+    ].map((k) => {
+      const on = 'width:100%;max-width:36px;height:6px;border-radius:3px;background:#0E6B52';
+      const off = 'width:100%;max-width:36px;height:6px;border-radius:3px;background:#DDE3DE';
+      return {
+        name: k.name,
+        level: levels[k.l].label,
+        aria: 'Lernstand ' + k.l + ' von 4: ' + levels[k.l].label,
+        chipStyle: 'font-size:12px;font-weight:600;border-radius:10px;padding:3px 10px;white-space:nowrap;' + levels[k.l].style,
+        s1: k.l >= 1 ? on : off,
+        s2: k.l >= 2 ? on : off,
+        s3: k.l >= 3 ? on : off,
+        s4: k.l >= 4 ? on : off,
+      };
+    });
+    return {
+      isSoz: tab === 'soz',
+      isKom: tab === 'kom',
+      sozStyle: seg(tab === 'soz'),
+      komStyle: seg(tab === 'kom'),
+      pickSoz: () => this.setState({ tab: 'soz' }),
+      pickKom: () => this.setState({ tab: 'kom' }),
+      cats,
+      cmds,
+    };
+  }
+}
+</script>
+</body>
+</html>

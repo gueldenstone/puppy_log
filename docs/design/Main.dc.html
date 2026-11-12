@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Heute</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+button{font-family:inherit}
+a{color:inherit;text-decoration:none}
+</style>
+</helmet>
+<div style="width:390px;height:844px;box-sizing:border-box;display:flex;flex-direction:column;background:#F3F5F2;color:#14201B;font-family:Inter,system-ui,sans-serif">
+<main style="flex:1;min-height:0;overflow:hidden;padding:24px 16px 0;display:flex;flex-direction:column;gap:12px">
+<header style="display:flex;align-items:center;gap:12px;padding:0 4px">
+<div aria-hidden="true" style="width:48px;height:48px;border-radius:24px;background:#D7EDE4;display:flex;align-items:center;justify-content:center">
+<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#0E6B52" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="10" r="2"/><circle cx="10" cy="6" r="2"/><circle cx="14" cy="6" r="2"/><circle cx="18" cy="10" r="2"/><path d="M12 12c-3 0-5 3-5 5.5 0 1.5 1.2 2.5 2.7 2.5 1 0 1.5-.5 2.3-.5s1.3.5 2.3.5c1.5 0 2.7-1 2.7-2.5C17 15 15 12 12 12z"/></svg>
+</div>
+<div style="flex:1;min-width:0">
+<h1 style="margin:0;font-family:'Space Grotesk',sans-serif;font-size:26px;line-height:30px;font-weight:600">Bruno</h1>
+<div style="font-size:14px;line-height:20px;color:#55645D">14 Wochen · 7,8 kg · Do, 12. Nov</div>
+</div>
+<div role="img" aria-label="Haushalt: Du und Mia" style="display:flex">
+<div style="width:32px;height:32px;border-radius:16px;background:#0E6B52;color:#fff;font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:center;border:2px solid #F3F5F2">Du</div>
+<div style="width:32px;height:32px;border-radius:16px;background:#1D5FA8;color:#fff;font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:center;border:2px solid #F3F5F2;margin-left:-8px">M</div>
+</div>
+</header>
+
+<section style="background:#fff;border:1px solid #DDE3DE;border-radius:16px;padding:16px">
+<div style="display:flex;align-items:baseline;justify-content:space-between">
+<div style="font-size:13px;line-height:18px;color:#55645D;font-weight:500">Routinen heute</div>
+<div style="font-size:13px;line-height:18px;color:#55645D;font-variant-numeric:tabular-nums">{{ percentText }}</div>
+</div>
+<div style="font-family:'Space Grotesk',sans-serif;font-size:28px;line-height:34px;font-weight:600;margin-top:2px">{{ progressText }}</div>
+<div role="presentation" style="height:8px;border-radius:4px;background:#E4EAE6;margin-top:10px;overflow:hidden">
+<div style="{{ barStyle }}"></div>
+</div>
+</section>
+
+<section style="background:#fff;border:1px solid #DDE3DE;border-radius:16px;padding:4px 0 0;overflow:hidden">
+<sc-for list="{{ routines }}" as="r" hint-placeholder-count="6">
+<div style="display:flex;align-items:center;gap:4px;min-height:56px;padding:0 16px 0 6px;border-top:1px solid #E6EBE7">
+<button onClick="{{ r.toggle }}" aria-label="{{ r.aria }}" style="width:44px;height:44px;background:none;border:0;padding:0;display:flex;align-items:center;justify-content:center;cursor:pointer">
+<span style="{{ r.boxStyle }}">
+<sc-if value="{{ r.done }}" hint-placeholder-val="{{ true }}">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg>
+</sc-if>
+</span>
+</button>
+<div style="flex:1;min-width:0">
+<div style="font-size:15px;line-height:20px;font-weight:500">{{ r.title }}</div>
+<div style="{{ r.metaStyle }}">{{ r.meta }}</div>
+</div>
+<div style="font-size:13px;color:#55645D;font-variant-numeric:tabular-nums">{{ r.time }}</div>
+</div>
+</sc-for>
+</section>
+
+<section>
+<div style="font-size:13px;line-height:18px;color:#55645D;font-weight:500;padding:0 4px 8px">Schnell eintragen</div>
+<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px">
+<a href="Eintragen.dc.html" style="min-height:84px;box-sizing:border-box;background:#fff;border:1px solid #DDE3DE;border-radius:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;font-size:13px;font-weight:600;color:#1D5FA8">
+<span aria-hidden="true" style="width:36px;height:36px;border-radius:18px;background:#E3EEF9;display:flex;align-items:center;justify-content:center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1D5FA8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.7l5.7 5.7a8 8 0 1 1-11.4 0z"/></svg></span>Pipi</a>
+<a href="Eintragen.dc.html" style="min-height:84px;box-sizing:border-box;background:#fff;border:1px solid #DDE3DE;border-radius:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;font-size:13px;font-weight:600;color:#7A4A1E">
+<span aria-hidden="true" style="width:36px;height:36px;border-radius:18px;background:#F3E7DA;display:flex;align-items:center;justify-content:center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#7A4A1E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 20h8a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4z M9 15h6a2 2 0 0 0 0-4H9a2 2 0 0 0 0 4z M11 10h2a2 2 0 0 0 0-4h-2a2 2 0 0 0 0 4z"/></svg></span>Kaka</a>
+<a href="Eintragen.dc.html" style="min-height:84px;box-sizing:border-box;background:#fff;border:1px solid #DDE3DE;border-radius:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;font-size:13px;font-weight:600;color:#14201B">
+<span aria-hidden="true" style="width:36px;height:36px;border-radius:18px;background:#E4EAE6;display:flex;align-items:center;justify-content:center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#14201B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11h18a9 9 0 0 1-18 0z"/></svg></span>Mahlzeit</a>
+<a href="Eintragen.dc.html" style="min-height:84px;box-sizing:border-box;background:#fff;border:1px solid #DDE3DE;border-radius:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;font-size:13px;font-weight:600;color:#14201B">
+<span aria-hidden="true" style="width:36px;height:36px;border-radius:18px;background:#E4EAE6;display:flex;align-items:center;justify-content:center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#14201B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2"/></svg></span>Gassi</a>
+</div>
+</section>
+</main>
+
+<nav aria-label="Hauptnavigation" style="height:72px;box-sizing:border-box;background:#fff;border-top:1px solid #DDE3DE;display:grid;grid-template-columns:repeat(4,minmax(0,1fr))">
+<a href="Main.dc.html" aria-current="page" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:#0E6B52;font-size:12px;font-weight:600">
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5L12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>Heute</a>
+<a href="Verlauf.dc.html" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:#55645D;font-size:12px;font-weight:500">
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 20v-8M12 20V4M18 20V9"/></svg>Verlauf</a>
+<a href="Gesundheit.dc.html" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:#55645D;font-size:12px;font-weight:500">
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1 1.1L12 21l7.8-7.5 1-1.1a5.5 5.5 0 0 0 0-7.8z"/></svg>Gesundheit</a>
+<a href="Lernen.dc.html" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:#55645D;font-size:12px;font-weight:500">
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/></svg>Lernen</a>
+</nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const DEFAULT = { r1: true, r2: true, r3: true, r4: false, r5: false, r6: false };
+    const done = (this.state && this.state.done) || DEFAULT;
+    const rs = [
+      { id: 'r1', time: '07:00', title: 'Pipi-Runde nach dem Aufwachen', doneMeta: 'Erledigt 07:05 · Du', openMeta: 'Um 07:00', late: false },
+      { id: 'r2', time: '07:30', title: 'Frühstück', doneMeta: 'Erledigt 07:42 · Mia', openMeta: 'Um 07:30', late: false },
+      { id: 'r3', time: '09:00', title: 'Training, 5 Minuten', doneMeta: 'Erledigt 09:10 · Du', openMeta: 'Um 09:00', late: false },
+      { id: 'r4', time: '10:00', title: 'Pipi-Runde', doneMeta: 'Gerade eben erledigt · Du', openMeta: 'Seit 20 Min fällig', late: true },
+      { id: 'r5', time: '12:30', title: 'Mittagsschlaf in der Box', doneMeta: 'Gerade eben erledigt · Du', openMeta: 'Um 12:30', late: false },
+      { id: 'r6', time: '13:00', title: 'Mittagessen', doneMeta: 'Gerade eben erledigt · Du', openMeta: 'Um 13:00', late: false },
+    ];
+    const total = rs.length;
+    const count = rs.filter((r) => done[r.id]).length;
+    const pct = Math.round((count / total) * 100);
+    const routines = rs.map((r) => {
+      const isDone = !!done[r.id];
+      const late = !isDone && r.late;
+      const meta = isDone ? (DEFAULT[r.id] ? r.doneMeta : r.doneMeta) : r.openMeta;
+      return {
+        id: r.id,
+        time: r.time,
+        title: r.title,
+        done: isDone,
+        meta,
+        aria: (isDone ? 'Als offen markieren: ' : 'Als erledigt abhaken: ') + r.title,
+        boxStyle: 'width:28px;height:28px;box-sizing:border-box;border-radius:14px;display:flex;align-items:center;justify-content:center;' +
+          (isDone ? 'background:#0E6B52;border:2px solid #0E6B52' : 'background:#fff;border:2px solid ' + (late ? '#A32A1C' : '#6B7B73')),
+        metaStyle: 'font-size:12.5px;line-height:17px;font-weight:' + (late ? '600' : '400') + ';color:' + (late ? '#A32A1C' : '#55645D'),
+        toggle: () => this.setState({ done: { ...done, [r.id]: !isDone } }),
+      };
+    });
+    return {
+      routines,
+      progressText: count + ' von ' + total,
+      percentText: pct + ' %',
+      barStyle: 'height:100%;border-radius:4px;background:#0E6B52;width:' + pct + '%',
+    };
+  }
+}
+</script>
+</body>
+</html>

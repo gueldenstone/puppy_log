@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Puppy Log · supplementary mockups</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#E9ECE8;color:#14201B;font-family:Inter,system-ui,sans-serif}
+header{max-width:1240px;margin:0 auto;padding:32px 16px 8px}
+h1{font-family:'Space Grotesk',sans-serif;font-size:30px;margin:0 0 6px}
+header p{margin:0;color:#55645D;max-width:760px;line-height:1.5}
+.grid{max-width:1240px;margin:0 auto;padding:16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(400px,1fr));gap:28px 20px}
+figure{margin:0;display:flex;flex-direction:column;align-items:center;gap:10px}
+iframe{width:390px;height:844px;border:0;border-radius:36px;box-shadow:0 0 0 10px #14201B,0 18px 40px rgba(0,0,0,.25);background:#F3F5F2;transform-origin:top center}
+figcaption{width:390px;display:flex;flex-direction:column;gap:4px;font-size:13.5px;line-height:1.45;color:#55645D;margin-top:10px}
+figcaption b{color:#14201B;font-size:15px}
+@media (max-width:440px){iframe{width:100%;max-width:390px} figcaption{width:100%} .grid{grid-template-columns:1fr}}
+</style></head><body>
+<header><h1>Supplementary mockups</h1>
+<p>Additions to the existing mockups (Heute, Eintragen, Verlauf, Gesundheit, Lernen, Einrichten) in the same style.
+The screens themselves show the German UI. Click a title to open a screen on its own. All data is sample data.</p></header>
+<main class="grid"><figure>
+<iframe src="01-heute.html" title="Today (swipe, skip)" loading="lazy"></iframe>
+<figcaption><a href="01-heute.html"><b>01 · Today (swipe, skip)</b></a><span>Tapping photo/name opens the profile, tapping the avatars opens household &amp; notifications. Swiping left reveals „Überspringen“ (skip). Skipped routines are grey with an icon and do not count towards the rate.</span></figcaption>
+</figure><figure>
+<iframe src="02-profil.html" title="Profile" loading="lazy"></iframe>
+<figcaption><a href="02-profil.html"><b>02 · Profile</b></a><span>Reached via photo/name on „Heute“. Shows all master data; the chip number is grouped for reading and can be copied. Weight and export are reachable from here.</span></figcaption>
+</figure><figure>
+<iframe src="03-profil-bearbeiten.html" title="Edit profile" loading="lazy"></iframe>
+<figcaption><a href="03-profil-bearbeiten.html"><b>03 · Edit profile</b></a><span>Photo from camera or library. Errors appear right at the field, in words and not only in red. Chip number with a numeric keyboard.</span></figcaption>
+</figure><figure>
+<iframe src="04-gewicht.html" title="Weight" loading="lazy"></iframe>
+<figcaption><a href="04-gewicht.html"><b>04 · Weight</b></a><span>Curve by weeks of life (needs the birth date, otherwise by date). List via Cinder in our colors; swipe left (or long-press) to edit/delete. Difference to the previous entry in grams.</span></figcaption>
+</figure><figure>
+<iframe src="05-wiegen.html" title="Log a weighing" loading="lazy"></iframe>
+<figcaption><a href="05-wiegen.html"><b>05 · Log a weighing</b></a><span>Bottom sheet over the weight page. Large number, decimal comma keyboard (inputmode=decimal), date defaults to today. Shows the change since the last entry right away.</span></figcaption>
+</figure><figure>
+<iframe src="06-routinen.html" title="Routines" loading="lazy"></iframe>
+<figcaption><a href="06-routinen.html"><b>06 · Routines</b></a><span>Reached via settings (and later „Bearbeiten“ on today). Grouped by time of day; the bell shows whether a reminder is sent. Several rounds per day are separate routines.</span></figcaption>
+</figure><figure>
+<iframe src="07-routine.html" title="Edit routine" loading="lazy"></iframe>
+<figcaption><a href="07-routine.html"><b>07 · Edit routine</b></a><span>Fixed time or time window, weekdays as chips. „Wird erledigt durch“ links the routine to an event type – the basis for &quot;event fulfils routine&quot;. Reminder and follow-up per routine.</span></figcaption>
+</figure><figure>
+<iframe src="08-einstellungen.html" title="Household &amp; notifications" loading="lazy"></iframe>
+<figcaption><a href="08-einstellungen.html"><b>08 · Household &amp; notifications</b></a><span>Reached via the avatars at the top right of „Heute“. Who gets reminders, quiet hours, default lead time for health appointments, plus routines, export and test.</span></figcaption>
+</figure><figure>
+<iframe src="09-termin.html" title="Add a health appointment" loading="lazy"></iframe>
+<figcaption><a href="09-termin.html"><b>09 · Add a health appointment</b></a><span>No template, but you can set a repetition yourself. Checking it off creates the next appointment. Reminder X days before, per appointment.</span></figcaption>
+</figure><figure>
+<iframe src="10-sozialisierung.html" title="Socialization: category" loading="lazy"></iframe>
+<figcaption><a href="10-sozialisierung.html"><b>10 · Socialization: category</b></a><span>Set a goal per category yourself (tap „Ziel“). You create the entries yourself (+). Rated = at least one rating; the dots show the latest reaction, with text for screen readers.</span></figcaption>
+</figure><figure>
+<iframe src="11-bewerten.html" title="Rate an experience" loading="lazy"></iframe>
+<figcaption><a href="11-bewerten.html"><b>11 · Rate an experience</b></a><span>Reaction 1 to 5 with words, not just numbers. Several ratings per entry so you can see progress.</span></figcaption>
+</figure><figure>
+<iframe src="12-uebung.html" title="Log a training session" loading="lazy"></iframe>
+<figcaption><a href="12-uebung.html"><b>12 · Log a training session</b></a><span>Success as &quot;succeeded out of attempts&quot; – this gives the percentage on the learning tab. Learning stage adjustable right here. Suggests „Sicher“ after 3 sessions above 80 %.</span></figcaption>
+</figure><figure>
+<iframe src="13-export.html" title="Export for the vet" loading="lazy"></iframe>
+<figcaption><a href="13-export.html"><b>13 · Export for the vet</b></a><span>PDF for the vet appointment, CSV for your own analysis. Choose what goes in.</span></figcaption>
+</figure><figure>
+<iframe src="14-einrichten.html" title="Setup (new order)" loading="lazy"></iframe>
+<figcaption><a href="14-einrichten.html"><b>14 · Setup (new order)</b></a><span>Order corrected: home screen first, then sign in inside the app – otherwise you are not signed in there (separate cookies). Opened in Safari, step 1 shows the „Teilen → Zum Home-Bildschirm“ instructions.</span></figcaption>
+</figure><figure>
+<iframe src="15-eintragen-anderes.html" title="Log: other, when" loading="lazy"></iframe>
+<figcaption><a href="15-eintragen-anderes.html"><b>15 · Log: other, when</b></a><span>Extends the existing log mockup: „Anderes“ with a name field and recently used names, „Wann“ with quick time offsets. No &quot;who&quot; field: we store who made the entry.</span></figcaption>
+</figure><figure>
+<iframe src="16-mitteilungen.html" title="Notifications on the lock screen" loading="lazy"></iframe>
+<figcaption><a href="16-mitteilungen.html"><b>16 · Notifications on the lock screen</b></a><span>What &quot;done on the other phone&quot; looks like: the reminder is replaced by a short done notification with the same tag, so iOS shows only one. Quiet hours move reminders to the end of the quiet period.</span></figcaption>
+</figure></main>
+</body></html>
