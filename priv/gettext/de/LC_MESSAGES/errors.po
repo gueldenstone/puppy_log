@@ -1,0 +1,32 @@
+## German translations for validation messages (Ash, Ecto, Phoenix)
+msgid ""
+msgstr ""
+"Language: de\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "is required"
+msgstr "ist erforderlich"
+
+msgid "can't be blank"
+msgstr "darf nicht leer sein"
+
+msgid "is invalid"
+msgstr "ist ungültig"
+
+msgid "has already been taken"
+msgstr "ist bereits vergeben"
+
+msgid "must be greater than or equal to %{min}"
+msgstr "muss mindestens %{min} sein"
+
+msgid "must be less than or equal to %{max}"
+msgstr "darf höchstens %{max} sein"
+
+msgid "length must be greater than or equal to %{min}"
+msgstr "muss mindestens %{min} Zeichen lang sein"
+
+msgid "length must be less than or equal to %{max}"
+msgstr "darf höchstens %{max} Zeichen lang sein"
+
+msgid "must match the pattern %{regex}"
+msgstr "hat das falsche Format"

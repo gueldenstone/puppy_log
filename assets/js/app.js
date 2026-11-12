@@ -25,21 +25,51 @@ import {LiveSocket} from "phoenix_live_view"
 import {hooks as colocatedHooks} from "phoenix-colocated/puppy_log"
 import {hooks as cinderHooks} from "phoenix-colocated/cinder"
 import topbar from "../vendor/topbar"
+import {PushSetup, registerServiceWorker} from "./push"
+import {SwipeRow} from "./swipe_row"
+
+// Toasts hide themselves after 5 s (by clicking themselves, which clears the
+// flash on the server too). The timer restarts when a new message arrives.
+const AutoDismiss = {
+  mounted() { this.schedule() },
+  updated() { this.schedule() },
+  destroyed() { clearTimeout(this.timer) },
+  schedule() {
+    clearTimeout(this.timer)
+    this.timer = setTimeout(() => this.el.click(), 5000)
+  },
+}
 
 const csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
 const liveSocket = new LiveSocket("/live", Socket, {
   longPollFallbackMs: 2500,
   params: {_csrf_token: csrfToken},
-  hooks: {...cinderHooks, ...colocatedHooks},
+  hooks: {...cinderHooks, ...colocatedHooks, PushSetup, SwipeRow, AutoDismiss},
 })
 
 // Show progress bar on live navigation and form submits
-topbar.config({barColors: {0: "#29d"}, shadowColor: "rgba(0, 0, 0, .3)"})
+topbar.config({barColors: {0: "#0e6b52"}, shadowColor: "rgba(0, 0, 0, .15)"})
 window.addEventListener("phx:page-loading-start", _info => topbar.show(300))
 window.addEventListener("phx:page-loading-stop", _info => topbar.hide())
 
 // connect if there are any LiveViews on the page
 liveSocket.connect()
+
+registerServiceWorker()
+
+// Copy text to the clipboard, e.g. the chip number: JS.dispatch("puppy:copy", detail: %{text: ...})
+window.addEventListener("puppy:copy", event => {
+  const button = event.target
+  navigator.clipboard?.writeText(event.detail.text).then(() => {
+    const label = button.getAttribute("aria-label")
+    button.setAttribute("aria-label", "Kopiert")
+    button.classList.add("bg-accent-tint")
+    setTimeout(() => {
+      button.setAttribute("aria-label", label)
+      button.classList.remove("bg-accent-tint")
+    }, 1200)
+  })
+})
 
 // expose liveSocket on window for web console debug logs and latency simulation:
 // >> liveSocket.enableDebug()

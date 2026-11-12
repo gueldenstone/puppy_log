@@ -54,6 +54,10 @@ defmodule PuppyLogWeb.CoreComponents do
 
   slot :inner_block, doc: "the optional inner block that renders the flash message"
 
+  attr :auto_dismiss, :boolean,
+    default: true,
+    doc: "hide after a few seconds (hook AutoDismiss); off for connection notices"
+
   def flash(assigns) do
     assigns = assign_new(assigns, :id, fn -> "flash-#{assigns.kind}" end)
 
@@ -62,8 +66,9 @@ defmodule PuppyLogWeb.CoreComponents do
       :if={msg = render_slot(@inner_block) || Phoenix.Flash.get(@flash, @kind)}
       id={@id}
       phx-click={JS.push("lv:clear-flash", value: %{key: @kind}) |> hide("##{@id}")}
+      phx-hook={@auto_dismiss && "AutoDismiss"}
       role="alert"
-      class="toast toast-top toast-end z-50"
+      class="toast toast-top toast-end z-50 !mt-0 !top-[calc(1.5rem+2px+env(safe-area-inset-top))]"
       {@rest}
     >
       <div class={[
@@ -78,7 +83,11 @@ defmodule PuppyLogWeb.CoreComponents do
           <p>{msg}</p>
         </div>
         <div class="flex-1" />
-        <button type="button" class="group self-start cursor-pointer" aria-label={gettext("close")}>
+        <button
+          type="button"
+          class="group self-start cursor-pointer"
+          aria-label={gettext("Schließen")}
+        >
           <.icon name="hero-x-mark" class="size-5 opacity-40 group-hover:opacity-70" />
         </button>
       </div>
@@ -185,8 +194,9 @@ defmodule PuppyLogWeb.CoreComponents do
   attr :error_class, :any, default: nil, doc: "the input error class to use over defaults"
 
   attr :rest, :global,
-    include: ~w(accept autocomplete capture cols disabled form list max maxlength min minlength
-                multiple pattern placeholder readonly required rows size step)
+    include: ~w(accept autocomplete autocapitalize capture cols disabled enterkeyhint form
+                inputmode list max maxlength min minlength multiple pattern placeholder readonly
+                required rows size spellcheck step)
 
   def input(%{field: %Phoenix.HTML.FormField{} = field} = assigns) do
     errors = if Phoenix.Component.used_input?(field), do: field.errors, else: []
@@ -240,20 +250,18 @@ defmodule PuppyLogWeb.CoreComponents do
 
   def input(%{type: "select"} = assigns) do
     ~H"""
-    <div class="fieldset mb-2">
-      <label for={@id}>
-        <span :if={@label} class="label mb-1">{@label}</span>
-        <select
-          id={@id}
-          name={@name}
-          class={[@class || "w-full select", @errors != [] && (@error_class || "select-error")]}
-          multiple={@multiple}
-          {@rest}
-        >
-          <option :if={@prompt} value="">{@prompt}</option>
-          {Phoenix.HTML.Form.options_for_select(@options, @value)}
-        </select>
-      </label>
+    <div class="flex flex-col gap-1.5">
+      <label :if={@label} for={@id} class={label_class()}>{@label}</label>
+      <select
+        id={@id}
+        name={@name}
+        class={[@class || field_class(), @errors != [] && (@error_class || error_field_class())]}
+        multiple={@multiple}
+        {@rest}
+      >
+        <option :if={@prompt} value="">{@prompt}</option>
+        {Phoenix.HTML.Form.options_for_select(@options, @value)}
+      </select>
       <.error :for={msg <- @errors}>{msg}</.error>
     </div>
     """
@@ -261,19 +269,17 @@ defmodule PuppyLogWeb.CoreComponents do
 
   def input(%{type: "textarea"} = assigns) do
     ~H"""
-    <div class="fieldset mb-2">
-      <label for={@id}>
-        <span :if={@label} class="label mb-1">{@label}</span>
-        <textarea
-          id={@id}
-          name={@name}
-          class={[
-            @class || "w-full textarea",
-            @errors != [] && (@error_class || "textarea-error")
-          ]}
-          {@rest}
-        >{Phoenix.HTML.Form.normalize_value("textarea", @value)}</textarea>
-      </label>
+    <div class="flex flex-col gap-1.5">
+      <label :if={@label} for={@id} class={label_class()}>{@label}</label>
+      <textarea
+        id={@id}
+        name={@name}
+        class={[
+          @class || [field_class(), "h-auto min-h-24 py-3"],
+          @errors != [] && (@error_class || error_field_class())
+        ]}
+        {@rest}
+      >{Phoenix.HTML.Form.normalize_value("textarea", @value)}</textarea>
       <.error :for={msg <- @errors}>{msg}</.error>
     </div>
     """
@@ -282,21 +288,20 @@ defmodule PuppyLogWeb.CoreComponents do
   # All other inputs text, datetime-local, url, password, etc. are handled here...
   def input(assigns) do
     ~H"""
-    <div class="fieldset mb-2">
-      <label for={@id}>
-        <span :if={@label} class="label mb-1">{@label}</span>
-        <input
-          type={@type}
-          name={@name}
-          id={@id}
-          value={Phoenix.HTML.Form.normalize_value(@type, @value)}
-          class={[
-            @class || "w-full input",
-            @errors != [] && (@error_class || "input-error")
-          ]}
-          {@rest}
-        />
-      </label>
+    <div class="flex flex-col gap-1.5">
+      <label :if={@label} for={@id} class={label_class()}>{@label}</label>
+      <input
+        type={@type}
+        name={@name}
+        id={@id}
+        value={Phoenix.HTML.Form.normalize_value(@type, @value)}
+        class={[
+          @class || field_class(),
+          @errors != [] && (@error_class || error_field_class())
+        ]}
+        aria-invalid={@errors != [] && "true"}
+        {@rest}
+      />
       <.error :for={msg <- @errors}>{msg}</.error>
     </div>
     """
@@ -305,12 +310,23 @@ defmodule PuppyLogWeb.CoreComponents do
   # Helper used by inputs to generate form errors
   defp error(assigns) do
     ~H"""
-    <p class="mt-1.5 flex gap-2 items-center text-sm text-error">
-      <.icon name="hero-exclamation-circle" class="size-5" />
+    <p class="flex gap-1.5 items-start px-0.5 text-[12.5px] leading-[17px] font-semibold text-danger">
+      <.icon name="hero-exclamation-circle-mini" class="size-4 shrink-0" />
       {render_slot(@inner_block)}
     </p>
     """
   end
+
+  @doc false
+  def label_class, do: "px-0.5 text-[13px] leading-[18px] font-medium text-muted"
+
+  @doc false
+  def field_class,
+    do:
+      "h-12 w-full rounded-xl border border-field bg-card px-3.5 text-base text-ink placeholder:text-muted/80 outline-none transition focus:border-accent focus:ring-4 focus:ring-accent/15"
+
+  @doc false
+  def error_field_class, do: "border-2 border-danger focus:border-danger focus:ring-danger/15"
 
   @doc """
   Renders a header with title.

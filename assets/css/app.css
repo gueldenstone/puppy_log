@@ -1,10 +1,7 @@
-/* See the Tailwind configuration guide for advanced usage
-   https://tailwindcss.com/docs/configuration */
+/* Puppy Log – design tokens from docs/design/DESIGN.md */
 
 @import "tailwindcss" source(none);
 @import "../../deps/cinder/priv/cinder.css";
-@import "../../deps/cinder/priv/themes/daisy_ui.css";
-@source "../../deps/ash_authentication_phoenix";
 @import "phoenix-colocated/puppy_log/colocated.css";
 @source "../css";
 @source "../js";
@@ -16,47 +13,10 @@
    The heroicons installation itself is managed by your mix.exs */
 @plugin "../vendor/heroicons";
 
-/* daisyUI Tailwind Plugin. */
+/* daisyUI is only kept for the generated core components (flash, <.input>).
+   Our own components use the tokens below. Light theme only, no dark mode. */
 @plugin "daisyui/packages/bundle/daisyui" {
   themes: false;
-}
-
-/* daisyUI theme plugin.
-  We ship with two themes, a light one inspired on Phoenix colors and a dark one inspired
-  on Elixir colors. Build your own at: https://daisyui.com/theme-generator/ */
-@plugin "daisyui/packages/bundle/daisyui-theme" {
-  name: "dark";
-  default: false;
-  prefersdark: true;
-  color-scheme: "dark";
-  --color-base-100: oklch(30.33% 0.016 252.42);
-  --color-base-200: oklch(25.26% 0.014 253.1);
-  --color-base-300: oklch(20.15% 0.012 254.09);
-  --color-base-content: oklch(97.807% 0.029 256.847);
-  --color-primary: oklch(58% 0.233 277.117);
-  --color-primary-content: oklch(96% 0.018 272.314);
-  --color-secondary: oklch(58% 0.233 277.117);
-  --color-secondary-content: oklch(96% 0.018 272.314);
-  --color-accent: oklch(60% 0.25 292.717);
-  --color-accent-content: oklch(96% 0.016 293.756);
-  --color-neutral: oklch(37% 0.044 257.287);
-  --color-neutral-content: oklch(98% 0.003 247.858);
-  --color-info: oklch(58% 0.158 241.966);
-  --color-info-content: oklch(97% 0.013 236.62);
-  --color-success: oklch(60% 0.118 184.704);
-  --color-success-content: oklch(98% 0.014 180.72);
-  --color-warning: oklch(66% 0.179 58.318);
-  --color-warning-content: oklch(98% 0.022 95.277);
-  --color-error: oklch(58% 0.253 17.585);
-  --color-error-content: oklch(96% 0.015 12.422);
-  --radius-selector: 0.25rem;
-  --radius-field: 0.25rem;
-  --radius-box: 0.5rem;
-  --size-selector: 0.21875rem;
-  --size-field: 0.21875rem;
-  --border: 1.5px;
-  --depth: 1;
-  --noise: 0;
 }
 
 @plugin "daisyui/packages/bundle/daisyui-theme" {
@@ -64,34 +24,89 @@
   default: true;
   prefersdark: false;
   color-scheme: "light";
-  --color-base-100: oklch(98% 0 0);
-  --color-base-200: oklch(96% 0.001 286.375);
-  --color-base-300: oklch(92% 0.004 286.32);
-  --color-base-content: oklch(21% 0.006 285.885);
-  --color-primary: oklch(70% 0.213 47.604);
-  --color-primary-content: oklch(98% 0.016 73.684);
-  --color-secondary: oklch(55% 0.027 264.364);
-  --color-secondary-content: oklch(98% 0.002 247.839);
-  --color-accent: oklch(0% 0 0);
-  --color-accent-content: oklch(100% 0 0);
-  --color-neutral: oklch(44% 0.017 285.786);
-  --color-neutral-content: oklch(98% 0 0);
-  --color-info: oklch(62% 0.214 259.815);
-  --color-info-content: oklch(97% 0.014 254.604);
-  --color-success: oklch(70% 0.14 182.503);
-  --color-success-content: oklch(98% 0.014 180.72);
-  --color-warning: oklch(66% 0.179 58.318);
-  --color-warning-content: oklch(98% 0.022 95.277);
-  --color-error: oklch(58% 0.253 17.585);
-  --color-error-content: oklch(96% 0.015 12.422);
-  --radius-selector: 0.25rem;
-  --radius-field: 0.25rem;
-  --radius-box: 0.5rem;
-  --size-selector: 0.21875rem;
-  --size-field: 0.21875rem;
-  --border: 1.5px;
-  --depth: 1;
+  --color-base-100: #ffffff;
+  --color-base-200: #f3f5f2;
+  --color-base-300: #dde3de;
+  --color-base-content: #14201b;
+  --color-primary: #0e6b52;
+  --color-primary-content: #ffffff;
+  --color-secondary: #55645d;
+  --color-secondary-content: #ffffff;
+  /* same name as our Tailwind token --color-accent, so keep them identical */
+  --color-accent: #0e6b52;
+  --color-accent-content: #ffffff;
+  --color-neutral: #14201b;
+  --color-neutral-content: #ffffff;
+  --color-info: #1d5fa8;
+  --color-info-content: #ffffff;
+  --color-success: #0e6b52;
+  --color-success-content: #ffffff;
+  --color-warning: #8a5200;
+  --color-warning-content: #ffffff;
+  --color-error: #a32a1c;
+  --color-error-content: #ffffff;
+  --radius-selector: 0.625rem;
+  --radius-field: 0.75rem;
+  --radius-box: 1rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 0;
   --noise: 0;
+}
+
+/* Self-hosted variable fonts (SIL OFL 1.1, see priv/static/fonts) */
+@font-face {
+  font-family: "Inter Variable";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url("/fonts/inter-latin-wght-normal.woff2") format("woff2-variations");
+}
+
+@font-face {
+  font-family: "Space Grotesk Variable";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 300 700;
+  src: url("/fonts/space-grotesk-latin-wght-normal.woff2") format("woff2-variations");
+}
+
+@theme {
+  --font-sans: "Inter Variable", Inter, system-ui, -apple-system, sans-serif;
+  --font-display: "Space Grotesk Variable", "Space Grotesk", system-ui, sans-serif;
+
+  /* surfaces */
+  --color-canvas: #f3f5f2;
+  --color-card: #ffffff;
+  --color-line: #dde3de;
+  --color-divider: #e6ebe7;
+  --color-mist: #e4eae6;
+
+  /* text */
+  --color-ink: #14201b;
+  --color-muted: #55645d;
+
+  /* accent: actions, done */
+  --color-accent: #0e6b52;
+  --color-accent-tint: #d7ede4;
+  --color-accent-dark: #0b4f3d;
+  --color-accent-chip: #bfe3d5;
+
+  /* event types */
+  --color-pipi: #1d5fa8;
+  --color-pipi-tint: #e3eef9;
+  --color-kaka: #7a4a1e;
+  --color-kaka-tint: #f3e7da;
+
+  /* states */
+  --color-danger: #a32a1c;
+  --color-danger-tint: #fbe4e0;
+  --color-danger-light: #f0c6c0;
+  --color-warn: #8a5200;
+  --color-warn-tint: #fdf0d5;
+  --color-unchecked: #6b7b73;
+  --color-field: #84918a;
 }
 
 /* Add variants based on LiveView classes */
@@ -99,10 +114,35 @@
 @custom-variant phx-submit-loading (.phx-submit-loading&, .phx-submit-loading &);
 @custom-variant phx-change-loading (.phx-change-loading&, .phx-change-loading &);
 
-/* Use the data attribute for dark mode  */
-@custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
-
 /* Make LiveView wrapper divs transparent for layout */
 [data-phx-session], [data-phx-teleported-src] { display: contents }
 
-/* This file is for your main application CSS */
+html {
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  background: var(--color-canvas);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 20px;
+}
+
+/* Swipeable rows (see assets/js/swipe_row.js): the row slides left to reveal
+   its actions. Focus inside also reveals them, so keyboard and VoiceOver users
+   get the same actions without the gesture. */
+.swipe-row { position: relative; overflow: hidden; touch-action: pan-y; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+.swipe-row .swipe-front { position: relative; z-index: 1; transition: transform 180ms ease-out; }
+.swipe-row.is-dragging .swipe-front { transition: none; }
+.swipe-row.is-open .swipe-front,
+.swipe-row:focus-within:not(.is-dragging) .swipe-front { transform: translateX(calc(-1 * var(--swipe-width, 132px))); }
+.swipe-row .swipe-actions { position: absolute; inset: 0 0 0 auto; display: flex; width: var(--swipe-width, 132px); }
+
+@media (prefers-reduced-motion: reduce) {
+  .swipe-row .swipe-front { transition: none; }
+}
+
+@keyframes fadein { from { opacity: 0 } to { opacity: 1 } }
+@keyframes sheetin { from { transform: translateY(100%) } to { transform: translateY(0) } }

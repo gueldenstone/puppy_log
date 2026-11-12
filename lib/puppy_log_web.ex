@@ -17,7 +17,9 @@ defmodule PuppyLogWeb do
   those modules here.
   """
 
-  def static_paths, do: ~w(assets fonts images favicon.ico robots.txt)
+  def static_paths,
+    do:
+      ~w(assets fonts images icons favicon.ico robots.txt manifest.webmanifest sw.js apple-touch-icon.png)
 
   def router do
     quote do
@@ -86,9 +88,12 @@ defmodule PuppyLogWeb do
       import Phoenix.HTML
       # Core UI components
       import PuppyLogWeb.CoreComponents
+      # Design building blocks (docs/design/DESIGN.md)
+      import PuppyLogWeb.UI
 
       # Common modules used in templates
       alias Phoenix.LiveView.JS
+      alias PuppyLogWeb.Format
       alias PuppyLogWeb.Layouts
 
       # Routes generation with the ~p sigil
