@@ -69,4 +69,21 @@ defmodule PuppyLogWeb.ProfileLiveTest do
 
     assert html =~ "Labrador Retriever"
   end
+
+  test "edits the arrival date", %{conn: conn, user: user} do
+    {:ok, _} = Puppy.create_profile(%{name: "Bruno"}, actor: user)
+
+    {:ok, _view, html} = live(conn, ~p"/profil")
+    assert html =~ "Einzug noch nicht eingetragen"
+
+    {:ok, view, _html} = live(conn, ~p"/profil/bearbeiten")
+
+    {:ok, _view, html} =
+      view
+      |> form("#profile-form", form: %{arrival_date: "2026-12-01"})
+      |> render_submit()
+      |> follow_redirect(conn, ~p"/profil")
+
+    assert html =~ "Eingezogen am 1. Dezember 2026"
+  end
 end

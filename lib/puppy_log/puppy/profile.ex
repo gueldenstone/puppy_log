@@ -29,14 +29,14 @@ defmodule PuppyLog.Puppy.Profile do
     end
 
     create :create do
-      accept [:name, :birth_date, :breed, :chip_number, :photo_path]
+      accept [:name, :birth_date, :arrival_date, :breed, :chip_number, :photo_path]
       change PuppyLog.Puppy.Changes.NormalizeChipNumber
       change relate_actor(:created_by)
       change relate_actor(:updated_by)
     end
 
     update :update do
-      accept [:name, :birth_date, :breed, :chip_number, :photo_path]
+      accept [:name, :birth_date, :arrival_date, :breed, :chip_number, :photo_path]
       require_atomic? false
       change PuppyLog.Puppy.Changes.NormalizeChipNumber
       change relate_actor(:updated_by)
@@ -87,6 +87,11 @@ defmodule PuppyLog.Puppy.Profile do
     end
 
     attribute :birth_date, :date, public?: true
+
+    attribute :arrival_date, :date do
+      description "Day the puppy moved in; routines count from here"
+      public? true
+    end
 
     attribute :breed, :string do
       public? true

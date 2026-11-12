@@ -76,6 +76,14 @@ defmodule PuppyLogWeb.ProfileLive do
               {if @profile.birth_date, do: Format.long_date(@profile.birth_date), else: "–"}
             </dd>
           </div>
+          <div class="px-4 py-2.5">
+            <dt class="text-[12.5px] text-muted">Einzug</dt>
+            <dd class="font-medium">
+              {if @profile.arrival_date,
+                do: "Eingezogen am #{Format.long_date(@profile.arrival_date)}",
+                else: "Einzug noch nicht eingetragen"}
+            </dd>
+          </div>
         </dl>
       </.card>
 

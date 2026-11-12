@@ -43,6 +43,13 @@ defmodule PuppyLog.Puppy.ProfileTest do
     assert profile.chip_number == "276098106543210"
   end
 
+  test "stores the arrival date", %{lukas: lukas} do
+    {:ok, profile} =
+      Puppy.create_profile(%{name: "Bruno", arrival_date: ~D[2026-12-01]}, actor: lukas)
+
+    assert profile.arrival_date == ~D[2026-12-01]
+  end
+
   test "only one puppy can exist", %{lukas: lukas} do
     {:ok, _} = Puppy.create_profile(%{name: "Bruno"}, actor: lukas)
     assert {:error, _} = Puppy.create_profile(%{name: "Zweiter"}, actor: lukas)

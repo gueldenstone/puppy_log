@@ -86,6 +86,12 @@ defmodule PuppyLogWeb.ProfileFormLive do
           label="Geburtsdatum"
           max={PuppyLog.Clock.today()}
         />
+        <div class="flex flex-col gap-1.5">
+          <.input field={@form[:arrival_date]} type="date" label="Einzug" />
+          <p class="px-0.5 text-[12.5px] text-muted">
+            Ab diesem Tag zählen Routinen und Erinnerungen.
+          </p>
+        </div>
         <.input field={@form[:breed]} label="Rasse" autocomplete="off" />
         <div class="flex flex-col gap-1.5">
           <.input
