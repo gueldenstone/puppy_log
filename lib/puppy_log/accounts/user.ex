@@ -4,11 +4,13 @@ defmodule PuppyLog.Accounts.User do
     domain: PuppyLog.Accounts,
     data_layer: AshSqlite.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
+    notifiers: [Ash.Notifier.PubSub],
     extensions: [AshAuthentication]
 
   sqlite do
     table "users"
     repo PuppyLog.Repo
+    migration_defaults receives_reminders: "true"
   end
 
   authentication do
@@ -51,6 +53,11 @@ defmodule PuppyLog.Accounts.User do
     create :create do
       description "Creates a household member. Only used from admin tooling."
       accept [:email, :name]
+    end
+
+    update :set_reminders do
+      description "Switch push reminders on or off for a household member."
+      accept [:receives_reminders]
     end
 
     read :get_by_subject do
@@ -112,6 +119,17 @@ defmodule PuppyLog.Accounts.User do
     policy action_type(:read) do
       authorize_if actor_present()
     end
+
+    policy action(:set_reminders) do
+      authorize_if actor_present()
+    end
+  end
+
+  pub_sub do
+    module PuppyLogWeb.Endpoint
+    prefix "users"
+
+    publish :set_reminders, "changed"
   end
 
   attributes do
@@ -124,6 +142,13 @@ defmodule PuppyLog.Accounts.User do
 
     attribute :name, :string do
       description "Display name, e.g. shown next to entries someone made"
+      public? true
+    end
+
+    attribute :receives_reminders, :boolean do
+      description "Whether this member gets push reminders for routines"
+      allow_nil? false
+      default true
       public? true
     end
   end

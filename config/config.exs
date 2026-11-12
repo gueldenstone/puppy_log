@@ -63,7 +63,7 @@ config :spark,
 config :puppy_log,
   ecto_repos: [PuppyLog.Repo],
   generators: [timestamp_type: :utc_datetime],
-  ash_domains: [PuppyLog.Accounts, PuppyLog.Notifications, PuppyLog.Puppy],
+  ash_domains: [PuppyLog.Accounts, PuppyLog.Notifications, PuppyLog.Puppy, PuppyLog.Daily],
   ash_authentication: [return_error_on_invalid_magic_link_token?: true]
 
 # Everything user-facing happens in German local time.

@@ -12,6 +12,7 @@ defmodule PuppyLog.Accounts do
       define :create_user, action: :create, args: [:email]
       define :get_user_by_email, action: :get_by_email, args: [:email]
       define :list_users, action: :read
+      define :set_reminders, action: :set_reminders
     end
   end
 end
