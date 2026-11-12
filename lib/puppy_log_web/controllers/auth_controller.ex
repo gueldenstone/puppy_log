@@ -2,63 +2,54 @@ defmodule PuppyLogWeb.AuthController do
   use PuppyLogWeb, :controller
   use AshAuthentication.Phoenix.Controller
 
-  def success(conn, activity, user, _token) do
-    return_to = get_session(conn, :return_to) || ~p"/"
+  @remember_me_cookie_options [
+    http_only: true,
+    secure: Application.compile_env(:puppy_log, :secure_cookies, true),
+    same_site: "Lax"
+  ]
 
-    message =
-      case activity do
-        {:confirm_new_user, :confirm} -> "Your email address has now been confirmed"
-        {:password, :reset} -> "Your password has successfully been reset"
-        _ -> "You are now signed in"
-      end
+  @impl AshAuthentication.Phoenix.Controller
+  def success(conn, _activity, user, _token) do
+    return_to = get_session(conn, :return_to) || ~p"/"
 
     conn
     |> delete_session(:return_to)
     |> store_in_session(user)
-    # If your resource has a different name, update the assign name here (i.e :current_admin)
     |> assign(:current_user, user)
-    |> put_flash(:info, message)
+    |> put_flash(:info, "Du bist angemeldet.")
     |> redirect(to: return_to)
   end
 
-  def failure(conn, activity, reason) do
-    message =
-      case {activity, reason} do
-        {_,
-         %AshAuthentication.Errors.AuthenticationFailed{
-           caused_by: %Ash.Error.Forbidden{
-             errors: [%AshAuthentication.Errors.CannotConfirmUnconfirmedUser{}]
-           }
-         }} ->
-          """
-          You have already signed in another way, but have not confirmed your account.
-          You can confirm your account using the link we sent to you, or by resetting your password.
-          """
-
-        {_,
-         %AshAuthentication.Errors.AuthenticationFailed{
-           caused_by: %AshAuthentication.Errors.ConfirmationRequired{}
-         }} ->
-          """
-          An account with this email already exists. We've sent a link to that
-          address - confirm it to finish linking this provider to your account.
-          """
-
-        _ ->
-          "Incorrect email or password"
-      end
-
+  @impl AshAuthentication.Phoenix.Controller
+  def failure(conn, _activity, _reason) do
     conn
-    |> put_flash(:error, message)
+    |> put_flash(
+      :error,
+      "Der Login-Link ist ungültig, abgelaufen oder wurde schon benutzt. Bitte einen neuen anfordern."
+    )
     |> redirect(to: ~p"/sign-in")
   end
 
+  @impl AshAuthentication.Phoenix.Controller
   def sign_out(conn, _params) do
-    return_to = get_session(conn, :return_to) || ~p"/"
-
     conn
     |> clear_session(:puppy_log)
-    |> put_flash(:info, "You are now signed out")
-    |> redirect(to: return_to)
+    |> put_flash(:info, "Du bist abgemeldet.")
+    |> redirect(to: ~p"/sign-in")
+  end
+
+  @impl AshAuthentication.Phoenix.Controller
+  def put_remember_me_cookie(conn, cookie_name, %{token: token, max_age: max_age}) do
+    put_resp_cookie(
+      conn,
+      cookie_name,
+      token,
+      Keyword.put(@remember_me_cookie_options, :max_age, max_age)
+    )
+  end
+
+  @impl AshAuthentication.Phoenix.Controller
+  def delete_remember_me_cookie(conn, cookie_name) do
+    delete_resp_cookie(conn, cookie_name, @remember_me_cookie_options)
   end
 end
