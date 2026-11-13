@@ -34,7 +34,9 @@ defmodule PuppyLogWeb.Endpoint do
   if Mix.env() == :dev do
     # Also reachable through Tailscale Serve (tailnet only). Tidewave can run
     # arbitrary code, so every device in the tailnet gets that power in dev.
-    plug Tidewave, allowed_origins: ["//mbp.tail6676a.ts.net"]
+    # Listing origins replaces Tidewave's default (the endpoint host), so
+    # localhost has to be listed explicitly as well.
+    plug Tidewave, allowed_origins: ["//localhost", "//mbp.tail6676a.ts.net"]
   end
 
   # Code reloading can be explicitly enabled under the
