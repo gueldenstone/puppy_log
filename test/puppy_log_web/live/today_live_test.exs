@@ -70,6 +70,29 @@ defmodule PuppyLogWeb.TodayLiveTest do
       %{meal: meal, potty: potty, sleep: sleep}
     end
 
+    test "large deviations read in hours", %{conn: conn} do
+      pin_local(~T[19:38:00])
+      {:ok, view, _html} = live(conn, ~p"/")
+      render_async(view)
+
+      view |> element(~s{button[aria-label="Abhaken: Frühstück"]}) |> render_click()
+      html = render_async(view)
+
+      assert html =~ "+12 Std 38 Min"
+      refute html =~ "+758 Min"
+    end
+
+    test "row content comes before its swipe actions for screen readers", %{conn: conn} do
+      pin_local(~T[06:30:00])
+      {:ok, view, _html} = live(conn, ~p"/")
+      html = render_async(view)
+
+      [row | _] = String.split(html, ~s{class="swipe-row"}) |> tl()
+      {front, _} = :binary.match(row, "swipe-front")
+      {actions, _} = :binary.match(row, "swipe-actions")
+      assert front < actions
+    end
+
     test "shows today's routines in order with progress 0 von 3", %{conn: conn} do
       pin_local(~T[06:30:00])
       {:ok, view, _html} = live(conn, ~p"/")
@@ -96,6 +119,8 @@ defmodule PuppyLogWeb.TodayLiveTest do
       assert html =~ "Erledigt 07:40 · Du"
       assert html =~ "+40 Min"
       assert html =~ "1 von 3"
+      # done, but outside the tolerance: the card says so, like „Verlauf“
+      assert html =~ "davon 0 pünktlich (± 15 Min)"
 
       [meal | _] = Daily.list_occurrences_on!(@today, actor: user)
       assert meal.status == :done
@@ -250,7 +275,7 @@ defmodule PuppyLogWeb.TodayLiveTest do
       assert html =~ "Seit 16 Min fällig"
       refute html =~ "Um 10:00"
       # the breakfast at 07:00 is long overdue
-      assert html =~ "Seit 3 Std fällig"
+      assert html =~ "Seit 3 Std 16 Min fällig"
     end
 
     test "live: the other person ticks off", %{conn: conn, user: user} do

@@ -170,18 +170,17 @@ defmodule PuppyLogWeb.RoutineRow do
   defp meta(occurrence, :open, _now, _current_user),
     do: "#{hhmm(occurrence.planned_start)} bis #{hhmm(occurrence.planned_end)}"
 
-  defp since(minutes) when minutes < 60, do: "#{minutes} Min"
-  defp since(minutes), do: "#{div(minutes, 60)} Std"
+  defp since(minutes), do: Format.duration(minutes)
 
   defp by(%{completed_by: %{} = user}, current_user), do: " · " <> Format.who(user, current_user)
   defp by(_occurrence, _current_user), do: ""
 
-  # „+40 Min“ / „−20 Min“ for a routine done outside the tolerance
+  # „+40 Min“ / „−12 Std 38 Min“ for a routine done outside the tolerance
   defp late_minutes(%{status: :done, deviation_minutes: deviation}) when is_integer(deviation) do
     cond do
       Matching.kept?(deviation) -> nil
-      deviation > 0 -> "+#{deviation} Min"
-      true -> "−#{-deviation} Min"
+      deviation > 0 -> "+" <> Format.duration(deviation)
+      true -> "−" <> Format.duration(-deviation)
     end
   end
 

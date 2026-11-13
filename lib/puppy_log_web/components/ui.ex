@@ -428,8 +428,10 @@ defmodule PuppyLogWeb.UI do
   def swipe_row(assigns) do
     ~H"""
     <div id={@id} class="swipe-row" phx-hook="SwipeRow" style={"--swipe-width: #{@width}px"}>
-      <div class="swipe-actions">{render_slot(@actions)}</div>
+      <%!-- content first so screen readers read the row before its actions;
+            the actions are positioned absolutely behind it --%>
       <div class="swipe-front bg-card">{render_slot(@inner_block)}</div>
+      <div class="swipe-actions">{render_slot(@actions)}</div>
     </div>
     """
   end

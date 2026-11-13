@@ -234,9 +234,25 @@ defmodule PuppyLogWeb.TodayLive do
     skipped = Enum.count(assigns.occurrences, &(&1.status == :skipped))
     total = length(assigns.occurrences) - skipped
     done = Enum.count(assigns.occurrences, &(&1.status == :done))
+
+    # „Verlauf“ only counts routines kept within the tolerance; say how many
+    # of today's done ones were, so the two numbers don't seem to disagree.
+    on_time =
+      Enum.count(
+        assigns.occurrences,
+        &(&1.status == :done and PuppyLog.Daily.Matching.kept?(&1.deviation_minutes))
+      )
+
     percent = if total > 0, do: round(done * 100 / total), else: 0
 
-    assigns = assign(assigns, skipped: skipped, total: total, done: done, percent: percent)
+    assigns =
+      assign(assigns,
+        skipped: skipped,
+        total: total,
+        done: done,
+        on_time: on_time,
+        percent: percent
+      )
 
     ~H"""
     <.card>
@@ -248,6 +264,9 @@ defmodule PuppyLogWeb.TodayLive do
         {@done} von {@total}
       </p>
       <.progress value={@percent} label={"#{@done} von #{@total} Routinen erledigt"} class="mt-2.5" />
+      <p :if={@on_time < @done} class="mt-2 text-[12.5px] text-muted">
+        davon {@on_time} pünktlich (± 15 Min)
+      </p>
       <p :if={@skipped > 0} class="mt-2 text-[12.5px] text-muted">
         {if @skipped == 1, do: "1 übersprungen zählt", else: "#{@skipped} übersprungen zählen"} nicht mit
       </p>

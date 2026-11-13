@@ -82,6 +82,25 @@ defmodule PuppyLogWeb.Format do
     number |> String.graphemes() |> Enum.chunk_every(3) |> Enum.map_join(" ", &Enum.join/1)
   end
 
+  @doc ~S"""
+  A duration in minutes, in hours once it reaches an hour.
+
+      iex> PuppyLogWeb.Format.duration(45)
+      "45 Min"
+      iex> PuppyLogWeb.Format.duration(120)
+      "2 Std"
+      iex> PuppyLogWeb.Format.duration(758)
+      "12 Std 38 Min"
+  """
+  def duration(minutes) when minutes < 60, do: "#{minutes} Min"
+
+  def duration(minutes) do
+    case rem(minutes, 60) do
+      0 -> "#{div(minutes, 60)} Std"
+      rest -> "#{div(minutes, 60)} Std #{rest} Min"
+    end
+  end
+
   @doc "Display name of a user, falling back to the e-mail local part."
   def user_name(nil), do: "Unbekannt"
   def user_name(%{name: name}) when is_binary(name) and name != "", do: name

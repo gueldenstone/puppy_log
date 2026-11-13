@@ -284,8 +284,8 @@ defmodule PuppyLogWeb.HistoryLive do
   @doc false
   def deviation(nil), do: nil
   def deviation(0), do: "pünktlich"
-  def deviation(minutes) when minutes > 0, do: "Ø #{minutes} Min zu spät"
-  def deviation(minutes), do: "Ø #{-minutes} Min zu früh"
+  def deviation(minutes) when minutes > 0, do: "Ø #{Format.duration(minutes)} zu spät"
+  def deviation(minutes), do: "Ø #{Format.duration(-minutes)} zu früh"
 
   defp misses(routine) do
     [

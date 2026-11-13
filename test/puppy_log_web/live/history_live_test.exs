@@ -86,6 +86,11 @@ defmodule PuppyLogWeb.HistoryLiveTest do
       assert has_element?(view, ~s{#history-routines a[href="/routines"]}, "Tagesablauf anlegen")
     end
 
+    test "average deviations of an hour or more read in hours" do
+      assert PuppyLogWeb.HistoryLive.deviation(75) == "Ø 1 Std 15 Min zu spät"
+      assert PuppyLogWeb.HistoryLive.deviation(-120) == "Ø 2 Std zu früh"
+    end
+
     test "deviation wording" do
       assert PuppyLogWeb.HistoryLive.deviation(12) == "Ø 12 Min zu spät"
       assert PuppyLogWeb.HistoryLive.deviation(-3) == "Ø 3 Min zu früh"
