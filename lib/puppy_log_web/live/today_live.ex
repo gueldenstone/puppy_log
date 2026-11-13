@@ -2,7 +2,8 @@ defmodule PuppyLogWeb.TodayLive do
   @moduledoc """
   Start screen „Heute“ (docs/design/Main.dc.html, entwuerfe/01): today's
   routines to tick off, the tick-off sheet (`/routine/:id`) and the quick
-  log buttons (`/eintragen`, sheet follows in the log form).
+  log buttons with the log sheet (`/eintragen`, `typ` presets the kind, see
+  `PuppyLogWeb.EventForm.preset/1`).
   """
 
   use PuppyLogWeb, :live_view
@@ -13,7 +14,7 @@ defmodule PuppyLogWeb.TodayLive do
   alias PuppyLog.{Accounts, Clock, Daily, Puppy}
   alias PuppyLog.Daily.Occurrence
   alias PuppyLog.Puppy.{Age, Weight}
-  alias PuppyLogWeb.RoutineSheet
+  alias PuppyLogWeb.{EventForm, RoutineSheet}
 
   on_mount {PuppyLogWeb.LiveUserAuth, :live_user_required}
 
@@ -40,7 +41,7 @@ defmodule PuppyLogWeb.TodayLive do
 
     {:ok,
      socket
-     |> assign(page_title: "Heute", sheet: nil, today: nil, quick: @quick)
+     |> assign(page_title: "Heute", sheet: nil, log_preset: %{}, today: nil, quick: @quick)
      |> load()}
   end
 
@@ -60,6 +61,9 @@ defmodule PuppyLogWeb.TodayLive do
         |> push_patch(to: ~p"/")
     end
   end
+
+  defp apply_action(socket, :log, params),
+    do: assign(socket, sheet: nil, log_preset: EventForm.preset(params["typ"]))
 
   defp apply_action(socket, _action, _params), do: assign(socket, sheet: nil)
 
@@ -195,6 +199,15 @@ defmodule PuppyLogWeb.TodayLive do
       module={RoutineSheet}
       id="routine-sheet"
       occurrence={@sheet}
+      current_user={@current_user}
+      return_to={~p"/"}
+    />
+
+    <.live_component
+      :if={@live_action == :log}
+      module={EventForm}
+      id="event-form"
+      preset={@log_preset}
       current_user={@current_user}
       return_to={~p"/"}
     />

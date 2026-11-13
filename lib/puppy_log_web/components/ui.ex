@@ -50,6 +50,11 @@ defmodule PuppyLogWeb.UI do
     "skip" => ~s(<path d="M5 4l10 8-10 8z"/><path d="M19 5v14"/>),
     "undo" => ~s(<path d="M9 14L4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-3"/>),
     "clock" => ~s(<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>),
+    "moon" => ~s(<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>),
+    "ball" =>
+      ~s(<circle cx="12" cy="12" r="9"/><path d="M4 8c5 1 11 1 16 0M4 16c5-1 11-1 16 0"/>),
+    "alert" =>
+      ~s(<path d="M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/>),
     "sparkle" =>
       ~s(<path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5L18 18M6 18l2.5-2.5M15.5 8.5L18 6"/>)
   }
