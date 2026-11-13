@@ -123,6 +123,14 @@ defmodule PuppyLog.Puppy.CalendarTest do
     assert "DESCRIPTION:Nüchtern kommen\\nImpfstoff/Charge: A123\\nImpfung" in lines
   end
 
+  test "an age entry mentions the age in the description" do
+    e = entry(%{due_age: 8, due_age_unit: :weeks})
+    lines = render([e]) |> lines()
+
+    assert "DESCRIPTION:mit 8 Wochen\\nEntwurmung" in lines
+    assert "SUMMARY:Wurmkur" in lines
+  end
+
   test "done entries are ticked and have no alarm" do
     e = entry(%{status: :done, done_on: ~D[2026-11-19]})
     lines = render([e]) |> lines()

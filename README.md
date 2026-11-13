@@ -83,7 +83,12 @@ is no built-in vaccination plan:
   below. Swipe left to complete (`/health/:id/done`: date, and vaccine/batch for vaccinations) or
   reopen; tap to edit (`/health/:id`); „Termin eintragen“ opens `/health/new`. Past items, e.g.
   the breeder's first vaccination, can be entered directly as „Bereits erledigt“.
-* Completing a repeating care item creates the next one at completion date + N weeks.
+* Instead of a date, an entry can be due „mit N Wochen/Monaten“ (needs the puppy's birth date
+  in the profile). Weeks mean birth date + 7·N days, months the same day N months later (clamped to
+  the month's end). Open age entries follow later corrections of the birth date; done entries and
+  entries with a fixed date never move. The age shows in the list and in the calendar description.
+* Completing a repeating care item creates the next one at completion date + N weeks; that
+  successor always gets a fixed date, even if the original was due at an age.
 
 Health entries send **no Web Push**. Reminders come from the calendar subscription instead:
 

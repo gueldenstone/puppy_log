@@ -205,7 +205,7 @@ defmodule PuppyLogWeb.HealthFormLive do
               max={DueAge.ranges() |> Map.fetch!(unit_atom(@form[:due_age_unit].value)) |> Enum.max()}
             />
             <fieldset class="flex flex-col gap-1">
-              <legend class="mb-1 text-sm font-semibold">Einheit</legend>
+              <legend class={[label_class(), "mb-1"]}>Einheit</legend>
               <div
                 class="grid grid-cols-2 gap-1 rounded-[14px] bg-field p-1"
                 role="radiogroup"

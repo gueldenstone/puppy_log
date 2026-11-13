@@ -138,6 +138,13 @@ Full rules: `docs/superpowers/specs/2026-11-13-health-appointments-design.md`.
     https address to copy), but each feed contains all household entries, whoever goes to the
     appointment („Geht hin: …“ in the description). „Neue Adresse erzeugen“ invalidates the old
     address. The card explains that on the iPhone „Alarme entfernen“ must be switched off.
+17. **Due at an age:** a health entry is either due on a date or „mit N Wochen/Monaten“, chosen in
+    the form via „Fällig: Datum | Alter“ (age needs the profile's birth date; the form shows the
+    resulting date as „→ Mi, 2. Dez“). Weeks = birth date + 7·N days, months = same day N months
+    later, clamped to the month's end. The stored date is derived: open age entries are recomputed
+    when the birth date is corrected, done entries and fixed-date entries never move. The successor
+    of a repeating entry gets a fixed date. The list shows „02.12. · mit 8 Wochen“, the calendar
+    event keeps its title and mentions the age in the description.
 
 **URLs are English** (UI texts stay German): `/`, `/routine/:id`, `/log?type=pee|poo|meal|walk`,
 `/history`, `/history/:date`, `/health`, `/health/new`, `/health/:id`, `/health/:id/done`,

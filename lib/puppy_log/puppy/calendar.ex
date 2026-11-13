@@ -8,6 +8,7 @@ defmodule PuppyLog.Puppy.Calendar do
   """
 
   alias PuppyLog.Clock
+  alias PuppyLog.Puppy.DueAge
 
   @kind_labels %{
     vaccination: "Impfung",
@@ -83,6 +84,7 @@ defmodule PuppyLog.Puppy.Calendar do
 
   defp description(entry, users) do
     [
+      age_line(entry),
       entry.notes,
       assignee_line(entry, users),
       entry.batch && "Impfstoff/Charge: " <> entry.batch,
@@ -91,6 +93,11 @@ defmodule PuppyLog.Puppy.Calendar do
     |> Enum.reject(&blank?/1)
     |> Enum.join("\n")
   end
+
+  defp age_line(%{due_age: age, due_age_unit: unit}) when is_integer(age) and not is_nil(unit),
+    do: DueAge.label(age, unit)
+
+  defp age_line(_entry), do: nil
 
   defp assignee_line(%{assignee_id: nil}, _users), do: nil
 
