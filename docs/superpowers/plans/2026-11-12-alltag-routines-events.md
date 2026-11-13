@@ -12,6 +12,8 @@
 
 ## Global Constraints
 
+- All URL paths and query parameters are English (user decision 2026-11-13): `/history`, `/health`, `/learn`, `/profile`, `/profile/edit`, `/weight`, `/settings`, `/log?type=pee|poo|meal|walk`, `/routines`, `/routines/new`; UI texts stay German.
+
 - UI text German; code, comments, test names, commit messages English.
 - Every created record stores its creator via `change relate_actor(...)`; no "who" field in forms.
 - All wall-clock logic in Europe/Berlin through `PuppyLog.Clock`; never `Date.utc_today/0`.
@@ -241,7 +243,7 @@
   - `routine_row(assigns)` attrs `occurrence`, `now :: NaiveDateTime`, `current_user`, `sheet_path :: String.t()` — check circle (done/late/overdue/skipped styles as `entwuerfe/01`), title, meta („Erledigt 07:05 · Du“, „Seit 20 Min fällig“, „Übersprungen · Riv“, „Um 10:00“ / „12:30 bis 14:00“, „+20 Min“ chip when done late), assignee initial, wrapped in `swipe_row` with action „Überspringen“ (open) or „Wieder öffnen“ (done/skipped).
   - `RoutineSheet` attrs `id`, `occurrence`, `current_user`, `return_to` — time choice segment + for `:potty` outcome buttons „Pipi“, „Kaka“, „Beides“, „Nichts“ (each logs a potty event outside with `routine: occurrence.id`), for other kinds „Abhaken“, plus „Überspringen“ / „Wieder öffnen“.
   - Routes: `live "/", TodayLive, :index`, `live "/routine/:id", TodayLive, :routine`, `live "/eintragen", TodayLive, :log` (log sheet rendered in Task 8; here only the route and quick buttons linking to `/eintragen?typ=pipi|kaka|mahlzeit|gassi` and `/eintragen`).
-  - TodayLive subscribes to `occurrences:changed`, `events:changed`, `routines:changed`; re-renders every 60 s (`:tick`) for overdue states. Progress card: „Routinen heute“, „x von y“ (y excludes skipped), percent, `progress`. Empty states: no arrival date → „Tragt im Profil das Einzugsdatum ein …“ with link; no routines → „Legt euren Tagesablauf an“ linking `/routinen/neu`.
+  - TodayLive subscribes to `occurrences:changed`, `events:changed`, `routines:changed`; re-renders every 60 s (`:tick`) for overdue states. Progress card: „Routinen heute“, „x von y“ (y excludes skipped), percent, `progress`. Empty states: no arrival date → „Tragt im Profil das Einzugsdatum ein …“ with link; no routines → „Legt euren Tagesablauf an“ linking `/routines/new`.
   - Quick tiles: Pipi, Kaka, Mahlzeit, Gassi (design `Main.dc.html`) + full-width secondary „Eintragen“; remove the „Wiegen“ tile.
 
 - [ ] **Step 1: Failing tests**
@@ -299,8 +301,8 @@
 **Interfaces:**
 - Consumes: Task 2 code interface, `Accounts.set_reminders/3`, `Daily.settings/1`, `Daily.save_settings/2`.
 - Produces:
-  - Routes `live "/routinen", RoutinesLive`, `live "/routinen/neu", RoutineFormLive, :new`, `live "/routinen/:id", RoutineFormLive, :edit`.
-  - `RoutinesLive` (`entwuerfe/06`): `top_bar` back to `/einstellungen`, intro text, Cinder list of `:active` routines sorted by time, item: kind icon, name, „07:00 · täglich“ / „09:00 bis 11:00 · Mo–Fr“, assignee name, bell or „aus“; footer „Neue Routine“.
+  - Routes `live "/routines", RoutinesLive`, `live "/routines/new", RoutineFormLive, :new`, `live "/routines/:id", RoutineFormLive, :edit`.
+  - `RoutinesLive` (`entwuerfe/06`): `top_bar` back to `/settings`, intro text, Cinder list of `:active` routines sorted by time, item: kind icon, name, „07:00 · täglich“ / „09:00 bis 11:00 · Mo–Fr“, assignee name, bell or „aus“; footer „Neue Routine“.
   - `RoutineFormLive` (`entwuerfe/07`): name; „Wird erledigt durch“ tiles Lösen, Mahlzeit, Gassi, Schlaf, Spiel, Training, Nur abhaken; segment „Feste Uhrzeit“/„Zeitfenster“ with time inputs; weekday chips Mo–So; „Zuständig“ select (Niemand + members); switches „Erinnern“ and „Nachfragen, wenn offen“ + minutes (15, 30, 45, 60); „Speichern“; edit mode „Routine löschen“ (archive, confirm „Diese Routine löschen? Der Verlauf bleibt erhalten.“).
   - Weekday summary helper `PuppyLogWeb.Format.weekdays([1..7]) :: String.t()` — all → „täglich“, 1–5 → „Mo–Fr“, 6–7 → „Sa, So“, else „Mo, Mi, Fr“.
   - Settings: members get a switch „Erinnerungen“ (`set_reminders`); card „Ruhezeiten“ with switch „Nachts nicht stören“, „Von“/„Bis“ time inputs, hint „In dieser Zeit gibt es keine Erinnerungen.“; row link „Routinen verwalten“.
@@ -356,8 +358,8 @@
 **Interfaces:**
 - Consumes: `Stats.periods/0`, `Stats.compute/2`, `RoutineSheet`, `routine_row/1`, `EventForm`, `Daily.list_events_on/2`, `Daily.delete_event/2`, `Daily.ensure_day/2`.
 - Produces:
-  - Routes `live "/verlauf", HistoryLive` (query `zeitraum`, default `"1w"`), `live "/verlauf/:date", DayLive, :index`, `live "/verlauf/:date/routine/:id", DayLive, :routine`, `live "/verlauf/:date/eintragen", DayLive, :log`, `live "/verlauf/:date/ereignis/:id", DayLive, :edit_event`.
-  - `HistoryLive` (`Verlauf.dc.html`): `page_title` „Verlauf“, horizontally scrollable period chips (`Stats.periods`, patch), card „Routinen eingehalten“ with rate and SVG bars (`HistoryCharts.adherence_bars/1`; today highlighted, future days dashed, each bar a link to `/verlauf/:date` for daily buckets), card „Stubenreinheit“ (accidents with „Vorher: N“, pee and poo outside/inside bars with text „21 draußen · 2 drinnen“, „Nichts gemacht: N“), card „Routinen“ (per routine: name, „eingehalten 5 von 7“, „Ø 12 Min zu spät“ / „Ø 3 Min zu früh“ / „pünktlich“, „2× übersprungen · 1× verpasst“), link „Heute ansehen“ → `/verlauf/<today>`. Bars have `role="img"` + aria-label text.
+  - Routes `live "/history", HistoryLive` (query `period`, default `"1w"`), `live "/history/:date", DayLive, :index`, `live "/history/:date/routine/:id", DayLive, :routine`, `live "/history/:date/log", DayLive, :log`, `live "/history/:date/events/:id", DayLive, :edit_event`.
+  - `HistoryLive` (`Verlauf.dc.html`): `page_title` „Verlauf“, horizontally scrollable period chips (`Stats.periods`, patch), card „Routinen eingehalten“ with rate and SVG bars (`HistoryCharts.adherence_bars/1`; today highlighted, future days dashed, each bar a link to `/history/:date` for daily buckets), card „Stubenreinheit“ (accidents with „Vorher: N“, pee and poo outside/inside bars with text „21 draußen · 2 drinnen“, „Nichts gemacht: N“), card „Routinen“ (per routine: name, „eingehalten 5 von 7“, „Ø 12 Min zu spät“ / „Ø 3 Min zu früh“ / „pünktlich“, „2× übersprungen · 1× verpasst“), link „Heute ansehen“ → `/history/<today>`. Bars have `role="img"` + aria-label text.
   - `DayLive`: `top_bar` with the date (`Format.short_date`) and previous/next day arrows (no future), `ensure_day` on mount for past days, routines via `routine_row` (sheet → tick/skip/reopen with time choice defaulting to the planned time for past days), Cinder list of events with swipe „Ändern“/„Löschen“, footer „Eintragen“ (EventForm with `default_date`).
 
 - [ ] **Step 1: Failing tests**
