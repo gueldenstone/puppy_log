@@ -17,8 +17,10 @@ The UI is German, code and URLs are English. Design reference: `docs/design/DESI
 * „Heute“ (`/`): today's routines with live state on every phone, quick buttons to log events.
 * „Verlauf“ (`/history`): adherence and house-training statistics over a chosen period, and a day
   view (`/history/:date`) to correct past days.
-* „Gesundheit“ (`/health`): weight curve; profile (`/profile`) with the puppy's arrival date.
-* „Haushalt & Mitteilungen“ (`/settings`): who gets reminders, quiet hours, push on this device.
+* „Gesundheit“ (`/health`): next appointment, weight curve, vaccinations, preventive care and vet
+  appointments; profile (`/profile`) with the puppy's arrival date.
+* „Haushalt & Mitteilungen“ (`/settings`): who gets reminders, quiet hours, lead time for health
+  reminders, calendar subscription, push on this device.
 
 ## Household members and sign-in
 
@@ -68,6 +70,40 @@ The process only runs when enabled:
 
 Tests call `PuppyLog.Daily.Reminders.tick/1` directly and send done notifications inline
 (`config :puppy_log, PuppyLog.Daily.Notify, async: false`).
+
+## Health entries and calendar feed
+
+Health entries (`PuppyLog.Puppy.HealthEntry`, domain `PuppyLog.Puppy`) are entered by hand, there
+is no built-in vaccination plan:
+
+* Care items („Impfung“, „Entwurmung“, „Floh/Zecke“, „Andere Vorsorge“) have a due date and an
+  optional repetition „alle N Wochen“. Vet appointments („Tierarzt“) have a date, an optional
+  time, a place and who goes („Zuständig“).
+* `/health` lists open entries by due date (chips „Heute“, „In N Tagen“, „Überfällig“), done ones
+  below. Swipe left to complete (`/health/:id/done`: date, and vaccine/batch for vaccinations) or
+  reopen; tap to edit (`/health/:id`); „Termin eintragen“ opens `/health/new`. Past items, e.g.
+  the breeder's first vaccination, can be entered directly as „Bereits erledigt“.
+* Completing a repeating care item creates the next one at completion date + N weeks.
+
+Health entries send **no Web Push**. Reminders come from the calendar subscription instead:
+
+* `GET /calendar/<token>.ics` serves an iCalendar feed (in-app generator,
+  `PuppyLog.Puppy.Calendar`). Each member has their own secret token (card „Kalender-Abo“ in
+  `/settings`, „Neue Adresse erzeugen“ invalidates the old one), but every feed contains **all**
+  household entries from one year back on. Unknown tokens get a 404.
+* Care items are all-day events with an alarm at 09:00 N days before; vet appointments last
+  60 minutes and get alarms N days and 2 hours before. N is the entry's „Erinnern“ value, which
+  defaults to „Termine erinnern“ in `/settings` (2 days). Done entries stay with „✓“ in the title
+  and without alarms. Calendars refresh the feed about once an hour.
+* Subscribe on the iPhone: copy the address from „Kalender-Abo“, then Einstellungen → Kalender →
+  Accounts → Account hinzufügen → Andere → Kalenderabo hinzufügen, paste the address, „Weiter“,
+  switch **„Alarme entfernen“ off** (otherwise iOS drops all reminders) and „Sichern“. Tapping
+  „Im Kalender öffnen“ (`webcal://`) on the phone leads to the same dialog. Google Calendar and
+  Android need the https address („Per URL hinzufügen“ on calendar.google.com).
+* The addresses are built from the endpoint's configured URL (`PuppyLogWeb.Endpoint.url/0`). In
+  dev that is `http://localhost:4000`, which a phone cannot reach, even when the page is opened
+  through Tailscale Serve; replace the host with `https://mbp.tail6676a.ts.net` by hand. A
+  subscribed calendar only refreshes while the phone is in the tailnet.
 
 ## Learn more
 

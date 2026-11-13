@@ -50,7 +50,8 @@ UI texts are German; quoted labels below („Heute“, „Überspringen“, …)
    future days dashed), outside/inside ratio for pee and poo, frequently skipped routines,
    today's events.
 4. **Health** („Gesundheit“, `Gesundheit.dc.html`): next appointment card, weight curve by weeks of life,
-   list of vaccinations and preventive care with a status chip (done / in N days). Users enter appointments themselves.
+   list of vaccinations and preventive care with a status chip (done / in N days). Users enter appointments
+   themselves (see decisions 13–16).
 5. **Learning** („Lernen“, `Lernen.dc.html`): toggle socialization/commands. Socialization: overall progress,
    categories (people, animals, noises, surfaces, places), recently rated with a reaction from 1 to 5.
    Commands: weekly stats, learning stage per command in four levels („Neu“, „Übt“, „Sicher“, „Unter Ablenkung“).
@@ -111,9 +112,37 @@ disagree with that spec, the spec wins.
     routines can be ticked off with their real time, skipped or reopened, events added, edited or
     deleted, e.g. the 02:00 night outing logged the next morning.
 
+## Decisions (2026-11-13, health entries and calendar)
+Full rules: `docs/superpowers/specs/2026-11-13-health-appointments-design.md`.
+
+13. **Health entries are entered by hand:** no built-in vaccination or deworming plan. One kind of
+    record (`HealthEntry`) covers care items („Impfung“, „Entwurmung“, „Floh/Zecke“, „Andere
+    Vorsorge“: a due date, optionally „alle N Wochen“) and vet appointments („Tierarzt“: date, time,
+    place, „Zuständig“). The form (`09`) shows five kind tiles (three over two) instead of the
+    mockup's four. Entries from before the arrival can be entered directly as „Bereits erledigt“.
+14. **Status chips:** „Erledigt“ (accent), „Heute“ and „In N Tagen“ within the entry's lead time
+    (warning), „In N Tagen“ later (neutral), „Überfällig“ (red; also in the „Nächster Termin“ card
+    as „seit N Tagen überfällig“). Open entries come first by due date, done ones below, newest
+    first. As in the other Cinder lists, the section label „Impfungen und Vorsorge“ with
+    „Termin eintragen“ sits above the card, not inside it as in `Gesundheit.dc.html`.
+    Swipe left: „Erledigt“ opens a sheet with „Wann“ (and „Impfstoff/Charge“ for vaccinations);
+    a done entry offers „Wieder öffnen“. Completing a repeating item creates the next one
+    from the completion date.
+15. **Calendar alarms instead of push:** health entries send no Web Push. Reminders are `VALARM`s
+    in the calendar subscription: care items at 09:00 N days before (household default „Termine
+    erinnern“ in `/settings`, editable per entry, 0 = on the day), vet appointments N days and
+    2 hours before. Done entries stay in the calendar with „✓“ and without alarms. The steppers
+    show the value as text next to them („2 Tage vorher“, „Alle 4 Wochen“), not inside as in `09`.
+16. **One household calendar:** every member has their own secret feed address
+    (`/calendar/<token>.ics`, card „Kalender-Abo“ in `/settings`, `webcal://` link plus the
+    https address to copy), but each feed contains all household entries, whoever goes to the
+    appointment („Geht hin: …“ in the description). „Neue Adresse erzeugen“ invalidates the old
+    address. The card explains that on the iPhone „Alarme entfernen“ must be switched off.
+
 **URLs are English** (UI texts stay German): `/`, `/routine/:id`, `/log?type=pee|poo|meal|walk`,
-`/history`, `/history/:date`, `/health`, `/learn`, `/profile`, `/profile/edit`, `/weight`,
-`/weight/new`, `/weight/:id`, `/settings`, `/routines`, `/routines/new`, `/routines/:id`.
+`/history`, `/history/:date`, `/health`, `/health/new`, `/health/:id`, `/health/:id/done`,
+`/learn`, `/profile`, `/profile/edit`, `/weight`, `/weight/new`, `/weight/:id`, `/settings`,
+`/routines`, `/routines/new`, `/routines/:id`; calendar feed `/calendar/:token.ics`.
 
 ## Technical requirements
 - Serve the fonts (Inter, Space Grotesk, both OFL) ourselves instead of Google Fonts (AGENTS.md: no external links).
