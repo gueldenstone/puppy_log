@@ -270,6 +270,16 @@ defmodule PuppyLog.Puppy.HealthEntryTest do
       assert entry.due_on == ~D[2026-12-02]
     end
 
+    test "changing the age of a done entry recomputes its date", %{lukas: lukas} do
+      {:ok, done} =
+        Puppy.create_health_entry(age_attrs(%{status: :done, done_on: ~D[2026-11-12]}),
+          actor: lukas
+        )
+
+      {:ok, entry} = Puppy.update_health_entry(done, %{due_age: 9}, actor: lukas)
+      assert entry.due_on == ~D[2026-12-09]
+    end
+
     test "removing the birth date keeps the dates", %{lukas: lukas} do
       {:ok, open} = Puppy.create_health_entry(age_attrs(), actor: lukas)
       profile = Puppy.get_profile!(authorize?: false)
