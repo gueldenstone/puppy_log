@@ -1,7 +1,8 @@
 defmodule PuppyLog.Daily.Changes.CompleteOccurrence do
   @moduledoc """
   Ticks off (`status: :done`, the default) or skips (`status: :skipped`) an
-  open occurrence.
+  open occurrence. With `status: :retimed` it only moves `done_at` (and the
+  deviation) of an occurrence that is already done.
 
   Only an occurrence that is still open in the database can change: the
   update carries the filter `status == :open`, so it becomes
@@ -25,10 +26,23 @@ defmodule PuppyLog.Daily.Changes.CompleteOccurrence do
   def init(opts), do: {:ok, Keyword.put_new(opts, :status, :done)}
 
   @impl true
-  def change(changeset, opts, _context) do
+  def change(changeset, opts, _context), do: change_status(changeset, opts[:status])
+
+  defp change_status(changeset, :retimed) do
+    done_at = Ash.Changeset.get_argument(changeset, :done_at)
+
+    changeset
+    |> Ash.Changeset.filter(Ash.Expr.expr(status == :done))
+    |> Ash.Changeset.force_change_attributes(%{
+      done_at: done_at,
+      deviation_minutes: deviation(changeset.data, done_at)
+    })
+  end
+
+  defp change_status(changeset, status) do
     changeset
     |> only_open()
-    |> set_outcome(opts[:status])
+    |> set_outcome(status)
   end
 
   defp only_open(changeset) do

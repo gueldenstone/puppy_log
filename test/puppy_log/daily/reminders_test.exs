@@ -77,7 +77,7 @@ defmodule PuppyLog.Daily.RemindersTest do
              "title" => "Gassi",
              "body" => "Jetzt fällig (10:00).",
              "tag" => "routine-#{occurrence_of(routine, lukas).id}",
-             "url" => "/"
+             "url" => "/routine/#{occurrence_of(routine, lukas).id}"
            }
 
     assert DateTime.compare(occurrence_of(routine, lukas).reminded_at, at(~T[10:00:00])) == :eq
@@ -131,13 +131,64 @@ defmodule PuppyLog.Daily.RemindersTest do
              "title" => "Gassi noch offen",
              "body" => "Seit 30 Minuten fällig.",
              "tag" => "routine-#{occurrence_of(routine, lukas).id}",
-             "url" => "/"
+             "url" => "/routine/#{occurrence_of(routine, lukas).id}"
            }
 
     assert DateTime.compare(occurrence_of(routine, lukas).follow_up_sent_at, at(~T[10:30:00])) ==
              :eq
 
     tick(~T[10:31:00])
+    assert pushed() == []
+  end
+
+  test "a window routine is followed up after its window ends", %{lukas: lukas} do
+    routine(lukas, %{starts_at: ~T[12:30:00], ends_at: ~T[14:00:00], follow_up_minutes: 30})
+
+    tick(~T[12:30:00])
+    assert titles() == ["Gassi", "Gassi"]
+
+    for time <- [~T[13:00:00], ~T[13:10:00], ~T[14:29:00]], do: tick(time)
+    assert pushed() == []
+
+    tick(~T[14:30:00])
+
+    assert [{_, %{"title" => "Gassi noch offen", "body" => "Seit 30 Minuten fällig."}}, _] =
+             pushed()
+  end
+
+  test "a routine moved after its reminder is reminded at the new time", %{lukas: lukas} do
+    routine = routine(lukas, %{starts_at: ~T[07:30:00], follow_up_minutes: 30})
+
+    tick(~T[07:30:00])
+    assert titles() == ["Gassi", "Gassi"]
+
+    pin_clock(at(~T[08:00:00]))
+    {:ok, _} = Daily.update_routine(routine, %{starts_at: ~T[18:00:00]}, actor: lukas)
+
+    occurrence = occurrence_of(routine, lukas)
+    assert occurrence.reminded_at == nil
+    assert occurrence.follow_up_sent_at == nil
+
+    tick(~T[08:00:00])
+    assert pushed() == []
+
+    tick(~T[18:00:00])
+    assert [{_, %{"body" => "Jetzt fällig (18:00)."}}, _] = pushed()
+
+    tick(~T[18:30:00])
+    assert titles() == ["Gassi noch offen", "Gassi noch offen"]
+  end
+
+  test "an edit that keeps the time keeps the reminder state", %{lukas: lukas} do
+    routine = routine(lukas, %{starts_at: ~T[07:30:00]})
+
+    tick(~T[07:30:00])
+    assert titles() == ["Gassi", "Gassi"]
+
+    pin_clock(at(~T[07:35:00]))
+    {:ok, _} = Daily.update_routine(routine, %{name: "Morgenrunde"}, actor: lukas)
+
+    tick(~T[07:36:00])
     assert pushed() == []
   end
 
@@ -245,11 +296,12 @@ defmodule PuppyLog.Daily.RemindersTest do
                   "title" => "Gassi erledigt ✓",
                   "body" => "Lukas, 10:05",
                   "tag" => tag,
-                  "url" => "/"
+                  "url" => url
                 }}
              ] = pushed()
 
       assert tag == "routine-#{occurrence.id}"
+      assert url == "/routine/#{occurrence.id}"
     end
 
     test "skipped tells the other phone too", %{lukas: lukas, riv: riv} do
@@ -274,6 +326,92 @@ defmodule PuppyLog.Daily.RemindersTest do
         )
 
       assert [{:lukas, %{"title" => "Lösen erledigt ✓", "body" => "Riv, 10:04"}}] = pushed()
+    end
+
+    test "nothing is sent during quiet hours", %{lukas: lukas, riv: riv} do
+      {:ok, _} = Daily.save_settings(%{quiet_hours_enabled: true}, actor: lukas)
+      routine = routine(lukas, %{starts_at: ~T[21:50:00]})
+      tick(~T[21:50:00])
+      assert titles() == ["Gassi", "Gassi"]
+
+      pin_clock(at(~T[22:05:00]))
+
+      {:ok, _} =
+        Daily.complete_occurrence(occurrence_of(routine, lukas), %{done_at: at(~T[21:55:00])},
+          actor: lukas
+        )
+
+      assert pushed() == []
+
+      {:ok, done} = Daily.reopen_occurrence(occurrence_of(routine, lukas), actor: lukas)
+      {:ok, _} = Daily.skip_occurrence(done, actor: riv)
+      assert pushed() == []
+    end
+
+    test "nothing is sent for days before yesterday", %{lukas: lukas} do
+      routine = routine(lukas, %{starts_at: ~T[10:00:00]})
+      tick(~T[10:00:00])
+      assert titles() == ["Gassi", "Gassi"]
+
+      pin_clock(at(~T[10:00:00], Date.add(@today, 2)))
+
+      {:ok, _} =
+        Daily.complete_occurrence(occurrence_of(routine, lukas), %{done_at: at(~T[10:05:00])},
+          actor: lukas
+        )
+
+      assert pushed() == []
+    end
+
+    test "a correction of yesterday is still sent", %{lukas: lukas} do
+      routine = routine(lukas, %{starts_at: ~T[10:00:00]})
+      tick(~T[10:00:00])
+      assert titles() == ["Gassi", "Gassi"]
+
+      pin_clock(at(~T[09:00:00], Date.add(@today, 1)))
+
+      {:ok, _} =
+        Daily.complete_occurrence(occurrence_of(routine, lukas), %{done_at: at(~T[10:05:00])},
+          actor: lukas
+        )
+
+      assert titles() == ["Gassi erledigt ✓"]
+    end
+
+    test "editing a linked event keeps its done notification and who did it", %{
+      lukas: lukas,
+      riv: riv
+    } do
+      routine(lukas, %{name: "Lösen", kind: :potty, starts_at: ~T[10:00:00]})
+      tick(~T[10:00:00])
+      assert titles() == ["Lösen", "Lösen"]
+
+      {:ok, event} =
+        Daily.log_event(
+          %{kind: :potty, pee: true, location: :outside, occurred_at: at(~T[10:04:00])},
+          actor: riv
+        )
+
+      assert titles() == ["Lösen erledigt ✓"]
+
+      {:ok, event} = Daily.update_event(event, %{note: "brav"}, actor: lukas)
+      assert pushed() == []
+
+      [occurrence] = Daily.list_occurrences_on!(@today, actor: lukas)
+      assert occurrence.status == :done
+      assert occurrence.completed_by_id == riv.id
+      assert occurrence.event_id == event.id
+      assert DateTime.compare(occurrence.done_at, at(~T[10:04:00])) == :eq
+
+      {:ok, _} = Daily.update_event(event, %{occurred_at: at(~T[10:12:00])}, actor: lukas)
+      assert pushed() == []
+
+      [occurrence] = Daily.list_occurrences_on!(@today, actor: lukas)
+      assert occurrence.status == :done
+      assert occurrence.completed_by_id == riv.id
+      assert occurrence.event_id == event.id
+      assert DateTime.compare(occurrence.done_at, at(~T[10:12:00])) == :eq
+      assert occurrence.deviation_minutes == 12
     end
 
     test "not reminded → nothing sent", %{lukas: lukas} do

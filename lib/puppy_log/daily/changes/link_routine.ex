@@ -17,17 +17,22 @@ defmodule PuppyLog.Daily.Changes.LinkRoutine do
   `:attached`). On update and destroy the previous link is released first: an
   occurrence the event completed is reopened, one it was only attached to
   keeps its tick and loses the `event_id`. While choosing, occurrences linked to the event
-  itself count as free.
+  itself count as free. An edited event that still fulfils the occurrence it
+  completed keeps that link: only `done_at` and the deviation follow the event
+  (`:retime`), so nobody is notified again and who did it stays.
 
   The choice is validated inside the transaction (reads only); all occurrence
   writes happen after the event is committed, so a failing link never loses
   the user's entry. If the chosen occurrence was completed concurrently
-  („Schon erledigt“) the event simply stays unlinked.
+  („Schon erledigt“) the event simply stays unlinked. Any other failure while
+  writing the occurrences is logged; the saved event is still returned, so the
+  user does not save it twice.
   """
 
   use Ash.Resource.Change
 
   require Ash.Query
+  require Logger
 
   alias PuppyLog.{Clock, Daily}
   alias PuppyLog.Daily.{Matching, Occurrence}
@@ -161,28 +166,61 @@ defmodule PuppyLog.Daily.Changes.LinkRoutine do
   # -- after the transaction: write the occurrences
 
   defp link(changeset, {:ok, event}) do
-    actor = changeset.context[:private][:actor]
+    target = changeset.context[@target]
 
-    with :ok <- release(event.id, changeset.data.link_mode),
-         {:ok, mode} <- fulfil(changeset.context[@target], event, actor) do
-      record_mode(event, mode)
+    case linked(event.id) do
+      [%{id: ^target, status: :done} = occurrence] when changeset.data.link_mode == :completed ->
+        occurrence |> retime(event) |> logged(event)
+
+      _other ->
+        changeset |> relink(event, target) |> logged(event)
     end
   end
 
   defp link(_changeset, result), do: result
 
-  defp unlink_destroyed(_changeset, {:ok, event} = result) do
-    with :ok <- release(event.id, event.link_mode) do
-      result
+  defp relink(changeset, event, target) do
+    actor = changeset.context[:private][:actor]
+
+    with :ok <- release(event.id, changeset.data.link_mode),
+         {:ok, mode} <- fulfil(target, event, actor) do
+      record_mode(event, mode)
     end
+  end
+
+  defp unlink_destroyed(_changeset, {:ok, event} = result) do
+    event.id |> release(event.link_mode) |> logged(event)
+    result
   end
 
   defp unlink_destroyed(_changeset, result), do: result
 
-  defp release(event_id, mode) do
+  # The event is saved at this point: a failure is logged, never returned.
+  defp logged({:error, error}, event) do
+    Logger.error("Linking event #{event.id} to its routine failed: " <> Exception.message(error))
+
+    {:ok, event}
+  end
+
+  defp logged(:ok, event), do: {:ok, event}
+  defp logged({:ok, %PuppyLog.Daily.Event{}} = result, _event), do: result
+  defp logged({:ok, %Occurrence{}}, event), do: {:ok, event}
+
+  defp linked(event_id) do
     Occurrence
     |> Ash.Query.filter(event_id == ^event_id)
     |> Ash.read!(authorize?: false)
+  end
+
+  defp retime(occurrence, event) do
+    occurrence
+    |> Ash.Changeset.for_update(:retime, %{done_at: event.occurred_at})
+    |> Ash.update(authorize?: false)
+  end
+
+  defp release(event_id, mode) do
+    event_id
+    |> linked()
     |> Enum.reduce_while(:ok, fn occurrence, :ok ->
       case release_one(occurrence, mode) do
         {:ok, _occurrence} -> {:cont, :ok}

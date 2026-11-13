@@ -15,6 +15,9 @@ defmodule PuppyLog.Daily.Occurrence do
   alias PuppyLog.Daily.Changes.CompleteOccurrence
   alias PuppyLog.Daily.Notify
 
+  # A change to these makes the reminder and follow-up due again.
+  @reminder_fields [:planned_start, :planned_end, :remind?, :follow_up_minutes]
+
   @snapshot [
     :name,
     :kind,
@@ -54,8 +57,14 @@ defmodule PuppyLog.Daily.Occurrence do
     end
 
     update :replan do
-      description "Internal: refreshes the snapshot of an open occurrence after a routine edit."
+      description """
+      Internal: refreshes the snapshot of an open occurrence after a routine
+      edit. A new time or reminder setting makes reminder and follow-up due again.
+      """
+
       accept @snapshot
+      require_atomic? false
+      change &__MODULE__.reset_reminders/2
     end
 
     update :complete do
@@ -72,6 +81,18 @@ defmodule PuppyLog.Daily.Occurrence do
       change {CompleteOccurrence, status: :skipped}
       change relate_actor(:completed_by, allow_nil?: true)
       change after_transaction(&notify_outcome/3)
+    end
+
+    update :retime do
+      description """
+      Internal: moves the done time of an occurrence its event completed, when
+      that event is edited but still fulfils it. Who did it stays, nobody is
+      notified.
+      """
+
+      require_atomic? false
+      argument :done_at, :utc_datetime_usec, allow_nil?: false
+      change {CompleteOccurrence, status: :retimed}
     end
 
     update :mark_reminded do
@@ -204,6 +225,15 @@ defmodule PuppyLog.Daily.Occurrence do
 
   identities do
     identity :one_per_day, [:routine_id, :date]
+  end
+
+  @doc false
+  def reset_reminders(changeset, _context) do
+    if Enum.any?(@reminder_fields, &Ash.Changeset.changing_attribute?(changeset, &1)) do
+      Ash.Changeset.force_change_attributes(changeset, %{reminded_at: nil, follow_up_sent_at: nil})
+    else
+      changeset
+    end
   end
 
   @doc false

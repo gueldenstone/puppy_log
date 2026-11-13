@@ -10,14 +10,15 @@ defmodule PuppyLogWeb.HistoryCharts do
 
   alias PuppyLogWeb.Format
 
-  # height of a 100 % bar in px; each bar's SVG is as tall as its value, with the
-  # value label directly above it
+  # height of a 100 % bar in px; each bar is a box as tall as its value, with the
+  # value label directly above it (plain HTML, so the rounded corners never stretch)
   @bar_height 60
 
   @doc """
   One bar per bucket of `PuppyLog.Daily.Stats.compute/2`. Today's bucket is
   highlighted, buckets without counted routines (nothing yet, still open) are
-  dashed. Daily buckets link to their day view.
+  a short dashed outline. Daily buckets link to their day view; the link (or,
+  for weeks, the column) is named after the bar's value.
   """
   attr :buckets, :list, required: true
 
@@ -35,6 +36,7 @@ defmodule PuppyLogWeb.HistoryCharts do
 
     ~H"""
     <div
+      id="adherence-bars"
       class={["mt-2.5 grid items-end", @gap]}
       style={"grid-template-columns: repeat(#{@count}, minmax(0, 1fr))"}
     >
@@ -60,7 +62,7 @@ defmodule PuppyLogWeb.HistoryCharts do
     ~H"""
     <.link
       navigate={"/history/#{Date.to_iso8601(@bucket.first)}"}
-      aria-label={"#{Format.short_date(@bucket.first)} ansehen"}
+      aria-label={bar_label(@bucket)}
       class="group flex min-w-0 flex-col items-center gap-0.5 rounded-md transition active:scale-95"
     >
       <.bar_body
@@ -76,7 +78,11 @@ defmodule PuppyLogWeb.HistoryCharts do
 
   defp bar_column(assigns) do
     ~H"""
-    <div class="flex min-w-0 flex-col items-center gap-0.5">
+    <div
+      class="flex min-w-0 flex-col items-center gap-0.5"
+      role="img"
+      aria-label={bar_label(@bucket)}
+    >
       <.bar_body
         bucket={@bucket}
         values?={@values?}
@@ -95,18 +101,17 @@ defmodule PuppyLogWeb.HistoryCharts do
   attr :bar_height, :integer, required: true
 
   defp bar_body(assigns) do
-    height =
-      case assigns.bucket.rate do
-        nil -> 4
-        rate -> max(round(rate / 100 * assigns.bar_height), 2)
-      end
-
-    assigns = assign(assigns, height: height)
+    assigns =
+      assign(assigns,
+        height:
+          assigns.bucket.rate && max(round(assigns.bucket.rate / 100 * assigns.bar_height), 4)
+      )
 
     ~H"""
     <span
       class="flex w-full flex-col items-center justify-end gap-0.5"
       style={"height: #{@bar_height + if(@values?, do: 18, else: 0)}px"}
+      aria-hidden="true"
     >
       <span
         :if={@values?}
@@ -117,47 +122,35 @@ defmodule PuppyLogWeb.HistoryCharts do
       >
         {@bucket.rate}
       </span>
-      <svg
-        viewBox={"0 0 20 #{@height}"}
-        preserveAspectRatio="none"
-        class="block w-full transition group-hover:opacity-80"
-        style={"height: #{@height}px"}
-        role="img"
-        aria-label={bar_label(@bucket)}
-      >
-        <rect
-          :if={@bucket.rate}
-          width="20"
-          height={@height}
-          rx="3"
-          fill={if @bucket.today?, do: "#8CCBB4", else: "#0E6B52"}
-          stroke={@bucket.today? && "#0E6B52"}
-          stroke-width={@bucket.today? && "2"}
-          vector-effect="non-scaling-stroke"
-        />
-        <rect
-          :if={!@bucket.rate}
-          x="0.5"
-          y="0.5"
-          width="19"
-          height={@height - 1}
-          rx="2"
-          fill="none"
-          stroke={if @bucket.today?, do: "#0E6B52", else: "#A9B5AE"}
-          stroke-dasharray="3 2"
-          vector-effect="non-scaling-stroke"
-        />
-      </svg>
+      <span
+        data-bar
+        class={[
+          "block w-full box-border transition group-hover:opacity-80",
+          bar_class(@bucket)
+        ]}
+        style={@height && "height: #{@height}px"}
+      ></span>
     </span>
-    <span class={[
-      "h-4 whitespace-nowrap text-[12px] leading-4",
-      @last? && "self-end",
-      if(@bucket.today?, do: "font-semibold text-ink", else: "text-muted")
-    ]}>
+    <span
+      class={[
+        "h-4 whitespace-nowrap text-[12px] leading-4",
+        @last? && "self-end",
+        if(@bucket.today?, do: "font-semibold text-ink", else: "text-muted")
+      ]}
+      aria-hidden="true"
+    >
       {if @label?, do: @bucket.label}
     </span>
     """
   end
+
+  defp bar_class(%{rate: nil}),
+    do: "h-1.5 rounded-[3px] border border-dashed border-[#A9B5AE]"
+
+  defp bar_class(%{today?: true}),
+    do: "rounded-[6px] border-2 border-solid border-accent bg-[#8CCBB4]"
+
+  defp bar_class(_bucket), do: "rounded-[6px] bg-accent"
 
   defp gap(count) when count <= 7, do: "gap-2"
   defp gap(count) when count <= 14, do: "gap-1"

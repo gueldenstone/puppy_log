@@ -210,15 +210,10 @@ defmodule PuppyLogWeb.RoutineSheet do
   end
 
   def handle_event("potty", %{"outcome" => value}, socket) do
-    {_value, _label, outcome} = List.keyfind(@outcomes, value, 0, hd(@outcomes))
-    occurrence = socket.assigns.occurrence
-
-    with_time(socket, fn at ->
-      %{kind: :potty, location: :outside, occurred_at: at, routine: occurrence.id}
-      |> Map.merge(outcome)
-      |> Daily.log_event(actor: socket.assigns.current_user)
-      |> finish(socket, "#{occurrence.name} abgehakt.")
-    end)
+    case List.keyfind(@outcomes, value, 0) do
+      {_value, _label, outcome} -> log_potty(socket, outcome)
+      nil -> {:noreply, socket}
+    end
   end
 
   def handle_event("skip", _params, socket) do
@@ -231,6 +226,17 @@ defmodule PuppyLogWeb.RoutineSheet do
     socket.assigns.occurrence
     |> Daily.reopen_occurrence(actor: socket.assigns.current_user)
     |> finish(socket, "#{socket.assigns.occurrence.name} ist wieder offen.")
+  end
+
+  defp log_potty(socket, outcome) do
+    occurrence = socket.assigns.occurrence
+
+    with_time(socket, fn at ->
+      %{kind: :potty, location: :outside, occurred_at: at, routine: occurrence.id}
+      |> Map.merge(outcome)
+      |> Daily.log_event(actor: socket.assigns.current_user)
+      |> finish(socket, "#{occurrence.name} abgehakt.")
+    end)
   end
 
   defp with_time(socket, fun) do

@@ -339,6 +339,28 @@ defmodule PuppyLog.Daily.EventTest do
       assert occ.deviation_minutes == 30
     end
 
+    test "a failing link after saving is logged and the event is kept", %{lukas: lukas} do
+      :ok = Daily.ensure_day(@today)
+
+      PuppyLog.Repo.query!("""
+      CREATE TRIGGER occurrences_locked BEFORE UPDATE ON occurrences
+      BEGIN SELECT RAISE(ABORT, 'occurrences locked'); END
+      """)
+
+      log =
+        ExUnit.CaptureLog.capture_log(fn ->
+          assert {:ok, event} =
+                   Daily.log_event(potty(%{occurred_at: at(~T[10:10:00])}), actor: lukas)
+
+          assert [%{id: id}] = Daily.list_events_on!(@today, actor: lukas)
+          assert id == event.id
+        end)
+
+      assert log =~ "Linking event"
+      assert log =~ "occurrences locked"
+      assert occurrence(lukas, ~T[10:00:00]).status == :open
+    end
+
     test "turning the event into an accident reopens the routine", %{lukas: lukas} do
       {:ok, event} = Daily.log_event(potty(%{occurred_at: at(~T[10:10:00])}), actor: lukas)
 

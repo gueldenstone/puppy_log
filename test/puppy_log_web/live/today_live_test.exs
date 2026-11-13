@@ -129,6 +129,20 @@ defmodule PuppyLogWeb.TodayLiveTest do
       assert render_async(view) =~ "Erledigt 10:05 · Du"
     end
 
+    test "an unknown potty outcome logs nothing", %{conn: conn, user: user} do
+      pin_local(~T[10:05:00])
+      potty = occurrence(user, "Pipi-Runde")
+      {:ok, view, _html} = live(conn, ~p"/routine/#{potty.id}")
+
+      view
+      |> element(~s{#routine-sheet button[phx-value-outcome="pee"]})
+      |> render_click(%{"outcome" => "bogus"})
+
+      assert has_element?(view, "#routine-sheet [role=dialog]", "Pipi-Runde")
+      assert Daily.list_events_on!(@today, actor: user) == []
+      assert occurrence(user, "Pipi-Runde").status == :open
+    end
+
     test "tick off 20 minutes ago from the sheet", %{conn: conn, user: user} do
       pin_local(~T[07:40:00])
       meal = occurrence(user, "Frühstück")

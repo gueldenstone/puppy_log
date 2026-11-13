@@ -6,14 +6,16 @@ defmodule PuppyLog.Daily.Reminders do
       yet and now lies within `[planned_start, planned_start + 10 min]`.
     * Follow-up: `follow_up_minutes` is set, the reminder went out, the
       occurrence is still open and now lies within
-      `[planned_start + follow_up_minutes, … + 10 min]`.
+      `[due + follow_up_minutes, … + 10 min]`, where `due` is the end of a
+      window (`planned_end`), otherwise `planned_start`.
     * Quiet hours suppress both. A suppressed message is not caught up
       later: once the 10 minutes are over it is dropped.
 
   `reminded_at` / `follow_up_sent_at` are claimed (set only while still nil)
   before anything is sent, so concurrent ticks or a restart can never send
   the same message twice. A reopened occurrence keeps them and is therefore
-  not reminded again.
+  not reminded again; a routine edit that changes the time or the reminder
+  settings clears them (`Occurrence` `:replan`).
 
   The process ticks at every full minute. A failing tick is logged and the
   next minute is tried again. It is only started with
@@ -87,12 +89,15 @@ defmodule PuppyLog.Daily.Reminders do
   defp send_due(occurrence, now) do
     start = Clock.local_datetime(occurrence.date, occurrence.planned_start)
 
+    due =
+      Clock.local_datetime(occurrence.date, occurrence.planned_end || occurrence.planned_start)
+
     cond do
       is_nil(occurrence.reminded_at) and due?(now, start) ->
         claim_and_send(occurrence, :mark_reminded, :reminded_at, now, &Notify.reminder/1)
 
       not is_nil(occurrence.reminded_at) and not is_nil(occurrence.follow_up_minutes) and
-          due?(now, DateTime.add(start, occurrence.follow_up_minutes, :minute)) ->
+          due?(now, DateTime.add(due, occurrence.follow_up_minutes, :minute)) ->
         claim_and_send(
           occurrence,
           :mark_follow_up_sent,

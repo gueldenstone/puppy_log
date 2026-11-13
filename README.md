@@ -51,11 +51,15 @@ Reminders are sent by `PuppyLog.Daily.Reminders`, a process that ticks once a mi
 
 * At the planned time (window start) every member whose reminder switch is on in `/settings` gets
   a Web Push on each subscribed device; an optional follow-up goes out after the routine's
-  follow-up minutes if it is still open.
+  follow-up minutes (counted from the window end for window routines) if it is still open.
+  Tapping a push opens the routine's sheet (`/routine/<id>`). Editing a routine's time or reminder
+  settings after its reminder makes it due again at the new time.
 * When someone ticks off or skips the routine, the others' notification is replaced (same tag) by
-  a short one: title „Pipi-Runde erledigt ✓“, body „Riv, 07:05“ (or „… übersprungen“).
-* Quiet hours (household-wide, set in `/settings`) suppress reminders and follow-ups. They are
-  dropped, not sent afterwards.
+  a short one: title „Pipi-Runde erledigt ✓“, body „Riv, 07:05“ (or „… übersprungen“). Editing
+  the event that ticked it off sends nothing new.
+* Quiet hours (household-wide, set in `/settings`) suppress reminders, follow-ups and these
+  done/skipped notices. They are dropped, not sent afterwards; corrections of days before
+  yesterday notify nobody.
 
 The process only runs when enabled:
 

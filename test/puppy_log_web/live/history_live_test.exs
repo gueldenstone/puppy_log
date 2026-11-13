@@ -35,12 +35,22 @@ defmodule PuppyLogWeb.HistoryLiveTest do
       assert html =~ "33 %"
       assert html =~ "1 von 3 pünktlich"
 
-      assert has_element?(view, ~s{a[href="/history/2026-11-09"] svg[role="img"]})
+      assert has_element?(
+               view,
+               ~s{a[href="/history/2026-11-08"][aria-label="So, 8. Nov: 100 Prozent eingehalten, 1 von 1"]}
+             )
 
       assert has_element?(
                view,
-               ~s{svg[role="img"][aria-label="So, 8. Nov: 100 Prozent eingehalten, 1 von 1"]}
+               ~s{a[href="/history/2026-11-12"][aria-label="Do, 12. Nov: noch keine Routinen ausgewertet"]}
              )
+
+      # bars are plain boxes, not stretched SVGs with distorted corners
+      bars = view |> element("#adherence-bars") |> render()
+      refute bars =~ ~s{preserveAspectRatio="none"}
+      refute bars =~ "<svg"
+      assert has_element?(view, ~s{a[href="/history/2026-11-08"] [data-bar].bg-accent})
+      assert has_element?(view, ~s{a[href="/history/2026-11-12"] [data-bar].border-dashed})
 
       assert html =~ "eingehalten 1 von 3"
       # (5 + 25 + 19) / 3 = 16.3
@@ -66,7 +76,8 @@ defmodule PuppyLogWeb.HistoryLiveTest do
       assert html =~ "KW 46"
       assert has_element?(view, ~s{nav[aria-label="Zeitraum"] a[aria-current="page"]}, "2 Monate")
       # weekly bars are no links into a day
-      refute has_element?(view, ~s{a[href="/history/2026-11-12"] svg[role="img"]})
+      refute has_element?(view, ~s{a[href="/history/2026-11-12"] [data-bar]})
+      assert has_element?(view, ~s{[role="img"][aria-label^="KW 46"] [data-bar]})
     end
 
     test "an unknown period falls back to one week", %{conn: conn} do
