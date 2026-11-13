@@ -28,7 +28,9 @@ defmodule PuppyLogWeb.Router do
 
     ash_authentication_live_session :authenticated_routes do
       # Each LiveView declares its own on_mount from PuppyLogWeb.LiveUserAuth
-      live "/", TodayLive
+      live "/", TodayLive, :index
+      live "/routine/:id", TodayLive, :routine
+      live "/eintragen", TodayLive, :log
       live "/verlauf", PlaceholderLive, :history
       live "/gesundheit", HealthLive
       live "/lernen", PlaceholderLive, :learn

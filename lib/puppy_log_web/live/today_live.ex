@@ -1,22 +1,67 @@
 defmodule PuppyLogWeb.TodayLive do
-  @moduledoc "Start screen „Heute“ (docs/design/Main.dc.html, entwuerfe/01)."
+  @moduledoc """
+  Start screen „Heute“ (docs/design/Main.dc.html, entwuerfe/01): today's
+  routines to tick off, the tick-off sheet (`/routine/:id`) and the quick
+  log buttons (`/eintragen`, sheet follows in the log form).
+  """
 
   use PuppyLogWeb, :live_view
 
-  alias PuppyLog.{Accounts, Clock, Puppy}
+  import Cinder.Refresh
+  import PuppyLogWeb.RoutineRow
+
+  alias PuppyLog.{Accounts, Clock, Daily, Puppy}
+  alias PuppyLog.Daily.Occurrence
   alias PuppyLog.Puppy.{Age, Weight}
+  alias PuppyLogWeb.RoutineSheet
 
   on_mount {PuppyLogWeb.LiveUserAuth, :live_user_required}
+
+  @collection "routines-today"
+  @load [:completed_by, :assignee]
+  @tick_ms 60_000
+
+  @quick [
+    {"pipi", "Pipi", "pipi", "text-pipi", "bg-pipi-tint"},
+    {"kaka", "Kaka", "kaka", "text-kaka", "bg-kaka-tint"},
+    {"mahlzeit", "Mahlzeit", "bowl", "text-ink", "bg-mist"},
+    {"gassi", "Gassi", "gassi", "text-ink", "bg-mist"}
+  ]
 
   @impl true
   def mount(_params, _session, socket) do
     if connected?(socket) do
-      PuppyLogWeb.Endpoint.subscribe("puppy_profile:changed")
-      PuppyLogWeb.Endpoint.subscribe("weight_entries:changed")
+      for topic <-
+            ~w(puppy_profile:changed weight_entries:changed occurrences:changed events:changed routines:changed),
+          do: PuppyLogWeb.Endpoint.subscribe(topic)
+
+      :timer.send_interval(@tick_ms, :tick)
     end
 
-    {:ok, socket |> assign(page_title: "Heute") |> load()}
+    {:ok,
+     socket
+     |> assign(page_title: "Heute", sheet: nil, today: nil, quick: @quick)
+     |> load()}
   end
+
+  @impl true
+  def handle_params(params, _uri, socket) do
+    {:noreply, apply_action(socket, socket.assigns.live_action, params)}
+  end
+
+  defp apply_action(socket, :routine, %{"id" => id}) do
+    case Daily.get_occurrence(id, actor: socket.assigns.current_user, load: @load) do
+      {:ok, occurrence} ->
+        assign(socket, sheet: occurrence)
+
+      {:error, _} ->
+        socket
+        |> put_flash(:error, "Diese Routine gibt es nicht mehr.")
+        |> push_patch(to: ~p"/")
+    end
+  end
+
+  defp apply_action(socket, _action, _params), do: assign(socket, sheet: nil)
 
   @impl true
   def render(assigns) do
@@ -65,30 +110,175 @@ defmodule PuppyLogWeb.TodayLive do
         <.action_button navigate={~p"/profil/bearbeiten"}>Welpenprofil anlegen</.action_button>
       </.card>
 
-      <.empty_state icon="clock" title="Routinen kommen als Nächstes">
-        Hier stehen bald eure Tagesroutinen zum Abhaken, mit Erinnerungen auf beiden Handys.
-      </.empty_state>
+      <%= case @plan do %>
+        <% :no_arrival -> %>
+          <.empty_state icon="clock" title="Wann zieht euer Welpe ein?">
+            Tragt im Profil das Einzugsdatum ein, dann stehen hier ab diesem Tag eure Routinen zum Abhaken.
+            <:action>
+              <.action_button variant={:secondary} navigate={~p"/profil/bearbeiten"}>
+                Einzugsdatum eintragen
+              </.action_button>
+            </:action>
+          </.empty_state>
+        <% {:before_arrival, date} -> %>
+          <.empty_state icon="clock" title="Bald geht es los">
+            Ab dem Einzug am {Format.long_date(date)} stehen hier eure Routinen zum Abhaken.
+          </.empty_state>
+        <% :no_routines -> %>
+          <.empty_state icon="clock" title="Legt euren Tagesablauf an">
+            Fütterung, Pipi-Runden, Schlaf: einmal festlegen, dann hakt ihr hier jeden Tag ab und bekommt Erinnerungen auf beide Handys.
+            <:action>
+              <%!-- plain path until the routines pages add the route --%>
+              <.action_button navigate="/routinen/neu">
+                <.pl_icon name="plus" class="size-5" /> Erste Routine anlegen
+              </.action_button>
+            </:action>
+          </.empty_state>
+        <% :nothing_today -> %>
+          <.empty_state icon="sparkle" title="Heute steht nichts an">
+            Für heute ist keine Routine geplant.
+          </.empty_state>
+        <% :routines -> %>
+          <.progress_card occurrences={@occurrences} />
 
-      <section class="flex flex-col gap-2">
+          <Cinder.collection
+            id="routines-today"
+            query={@query}
+            actor={@current_user}
+            layout={:list}
+            search={false}
+            show_filters={false}
+            query_opts={[load: [:completed_by, :assignee]]}
+          >
+            <:item :let={occurrence}>
+              <.routine_row
+                occurrence={occurrence}
+                now={@now}
+                current_user={@current_user}
+                sheet_path={~p"/routine/#{occurrence.id}"}
+              />
+            </:item>
+          </Cinder.collection>
+
+          <p class="text-center text-[12.5px] text-muted">
+            Nach links wischen: überspringen · Antippen: Details
+          </p>
+        <% nil -> %>
+      <% end %>
+
+      <section class="flex flex-col gap-2 pt-1">
         <.section_label>Schnell eintragen</.section_label>
         <div class="grid grid-cols-4 gap-2">
           <.link
-            navigate={~p"/gewicht/neu"}
-            class="flex min-h-[84px] flex-col items-center justify-center gap-1.5 rounded-[14px] border border-line bg-card text-[13px] font-semibold transition active:scale-95"
+            :for={{typ, label, icon, color, tint} <- @quick}
+            patch={~p"/eintragen?typ=#{typ}"}
+            class={[
+              "flex min-h-[84px] flex-col items-center justify-center gap-1.5 rounded-[14px] border border-line bg-card text-[13px] font-semibold",
+              "transition hover:-translate-y-px hover:shadow-[0_2px_8px_rgba(20,32,27,0.08)] active:scale-95",
+              color
+            ]}
           >
-            <span class="grid size-9 place-items-center rounded-full bg-mist">
-              <.pl_icon name="scale" class="size-5" />
+            <span class={["grid size-9 place-items-center rounded-full", tint]}>
+              <.pl_icon name={icon} class="size-5" />
             </span>
-            Wiegen
+            {label}
           </.link>
         </div>
+        <.action_button variant={:secondary} patch={~p"/eintragen"}>
+          <.pl_icon name="plus" class="size-5" /> Eintragen
+        </.action_button>
       </section>
     </Layouts.app>
+
+    <.live_component
+      :if={@sheet}
+      module={RoutineSheet}
+      id="routine-sheet"
+      occurrence={@sheet}
+      current_user={@current_user}
+      return_to={~p"/"}
+    />
+    """
+  end
+
+  attr :occurrences, :list, required: true
+
+  defp progress_card(assigns) do
+    skipped = Enum.count(assigns.occurrences, &(&1.status == :skipped))
+    total = length(assigns.occurrences) - skipped
+    done = Enum.count(assigns.occurrences, &(&1.status == :done))
+    percent = if total > 0, do: round(done * 100 / total), else: 0
+
+    assigns = assign(assigns, skipped: skipped, total: total, done: done, percent: percent)
+
+    ~H"""
+    <.card>
+      <div class="flex items-baseline justify-between">
+        <span class="text-[13px] leading-[18px] font-medium text-muted">Routinen heute</span>
+        <span class="text-[13px] leading-[18px] tabular-nums text-muted">{@percent} %</span>
+      </div>
+      <p class="mt-0.5 font-display text-[28px] leading-[34px] font-semibold tabular-nums">
+        {@done} von {@total}
+      </p>
+      <.progress value={@percent} label={"#{@done} von #{@total} Routinen erledigt"} class="mt-2.5" />
+      <p :if={@skipped > 0} class="mt-2 text-[12.5px] text-muted">
+        {if @skipped == 1, do: "1 übersprungen zählt", else: "#{@skipped} übersprungen zählen"} nicht mit
+      </p>
+    </.card>
     """
   end
 
   @impl true
+  def handle_event("complete", %{"id" => id}, socket) do
+    mutate(socket, id, &Daily.complete_occurrence(&1, %{done_at: Clock.utc_now()}, &2))
+  end
+
+  def handle_event("skip", %{"id" => id}, socket),
+    do: mutate(socket, id, &Daily.skip_occurrence/2)
+
+  def handle_event("reopen", %{"id" => id}, socket),
+    do: mutate(socket, id, &Daily.reopen_occurrence/2)
+
+  # Shows the result right away; the PubSub broadcast refreshes the rest.
+  defp mutate(socket, id, action) do
+    opts = [actor: socket.assigns.current_user]
+
+    with {:ok, occurrence} <- Daily.get_occurrence(id, opts),
+         {:ok, updated} <- action.(occurrence, opts) do
+      updated = Ash.load!(updated, @load, opts)
+
+      {:noreply,
+       socket
+       |> update_item(@collection, updated.id, fn _ -> updated end)
+       |> load()}
+    else
+      {:error, error} ->
+        {:noreply, put_flash(socket, :error, RoutineSheet.error_message(error))}
+    end
+  end
+
+  @impl true
+  def handle_info(:tick, socket) do
+    if Clock.today() == socket.assigns.today,
+      do: {:noreply, assign(socket, now: now())},
+      else: {:noreply, load(socket)}
+  end
+
+  def handle_info(%Phoenix.Socket.Broadcast{topic: topic}, socket)
+      when topic in ["occurrences:changed", "events:changed", "routines:changed"] do
+    {:noreply, socket |> load() |> refresh_sheet() |> refresh_table(@collection, silent: true)}
+  end
+
   def handle_info(%Phoenix.Socket.Broadcast{}, socket), do: {:noreply, load(socket)}
+
+  defp refresh_sheet(%{assigns: %{sheet: %Occurrence{id: id}}} = socket) do
+    case Daily.get_occurrence(id, actor: socket.assigns.current_user, load: @load) do
+      {:ok, occurrence} -> assign(socket, sheet: occurrence)
+      {:error, _} -> socket |> assign(sheet: nil) |> push_patch(to: ~p"/")
+    end
+  end
+
+  defp refresh_sheet(socket), do: socket
 
   defp load(socket) do
     actor = socket.assigns.current_user
@@ -109,6 +299,42 @@ defmodule PuppyLogWeb.TodayLive do
       Accounts.list_users!(actor: actor)
       |> Enum.sort_by(&(&1.id != actor.id))
 
-    assign(socket, profile: profile, subtitle: subtitle, household: household)
+    {plan, occurrences} = plan(profile, today, actor)
+
+    socket
+    |> assign(profile: profile, subtitle: subtitle, household: household, now: now())
+    |> assign(plan: plan, occurrences: occurrences)
+    |> assign_query(today)
   end
+
+  defp assign_query(%{assigns: %{today: today}} = socket, today), do: socket
+
+  defp assign_query(socket, today) do
+    assign(socket,
+      today: today,
+      query: Ash.Query.for_read(Occurrence, :on_date, %{date: today})
+    )
+  end
+
+  defp plan(nil, _today, _actor), do: {nil, []}
+  defp plan(%{arrival_date: nil}, _today, _actor), do: {:no_arrival, []}
+
+  defp plan(%{arrival_date: arrival}, today, actor) do
+    if Date.after?(arrival, today) do
+      {{:before_arrival, arrival}, []}
+    else
+      :ok = Daily.ensure_day(today)
+
+      case Daily.list_occurrences_on!(today, actor: actor) do
+        [] ->
+          {if(Daily.list_routines!(actor: actor) == [], do: :no_routines, else: :nothing_today),
+           []}
+
+        occurrences ->
+          {:routines, occurrences}
+      end
+    end
+  end
+
+  defp now, do: Clock.now() |> DateTime.to_naive()
 end

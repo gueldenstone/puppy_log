@@ -131,13 +131,14 @@ body {
 }
 
 /* Swipeable rows (see assets/js/swipe_row.js): the row slides left to reveal
-   its actions. Focus inside also reveals them, so keyboard and VoiceOver users
+   its actions. Keyboard focus inside also reveals them (not a tap, which would
+   slide the row away under the finger), so keyboard and VoiceOver users
    get the same actions without the gesture. */
 .swipe-row { position: relative; overflow: hidden; touch-action: pan-y; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
 .swipe-row .swipe-front { position: relative; z-index: 1; transition: transform 180ms ease-out; }
 .swipe-row.is-dragging .swipe-front { transition: none; }
 .swipe-row.is-open .swipe-front,
-.swipe-row:focus-within:not(.is-dragging) .swipe-front { transform: translateX(calc(-1 * var(--swipe-width, 132px))); }
+.swipe-row:has(:focus-visible):not(.is-dragging) .swipe-front { transform: translateX(calc(-1 * var(--swipe-width, 132px))); }
 .swipe-row .swipe-actions { position: absolute; inset: 0 0 0 auto; display: flex; width: var(--swipe-width, 132px); }
 
 @media (prefers-reduced-motion: reduce) {

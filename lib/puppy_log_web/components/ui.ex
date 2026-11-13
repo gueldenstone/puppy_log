@@ -47,6 +47,8 @@ defmodule PuppyLogWeb.UI do
     "logout" => ~s(<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/>),
     "phone" => ~s(<rect x="6" y="2" width="12" height="20" rx="2"/><path d="M11 18h2"/>),
     "send" => ~s(<path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/>),
+    "skip" => ~s(<path d="M5 4l10 8-10 8z"/><path d="M19 5v14"/>),
+    "undo" => ~s(<path d="M9 14L4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-3"/>),
     "clock" => ~s(<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>),
     "sparkle" =>
       ~s(<path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5L18 18M6 18l2.5-2.5M15.5 8.5L18 6"/>)
