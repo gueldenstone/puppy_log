@@ -136,4 +136,123 @@ defmodule PuppyLog.Puppy.HealthEntryTest do
     {:ok, _} = Puppy.create_health_entry(care_attrs(), actor: lukas)
     assert_receive %Phoenix.Socket.Broadcast{topic: "health_entries:changed"}
   end
+
+  describe "due at an age" do
+    setup %{lukas: lukas} do
+      pin_clock(DateTime.new!(~D[2026-11-13], ~T[10:00:00], "Europe/Berlin"))
+      {:ok, _} = Puppy.create_profile(%{name: "Momo", birth_date: ~D[2026-10-07]}, actor: lukas)
+      :ok
+    end
+
+    defp age_attrs(attrs \\ %{}) do
+      Map.merge(
+        %{kind: :vaccination, title: "Impfung", due_age: 8, due_age_unit: :weeks},
+        attrs
+      )
+    end
+
+    defp error_for(result, field) do
+      assert {:error, %Ash.Error.Invalid{errors: errors}} = result
+      Enum.find(errors, &(&1.field == field))
+    end
+
+    test "an age sets the due date from the birth date", %{lukas: lukas} do
+      {:ok, entry} = Puppy.create_health_entry(age_attrs(), actor: lukas)
+      assert entry.due_on == ~D[2026-12-02]
+      assert entry.due_age == 8
+    end
+
+    test "changing the age recomputes the date", %{lukas: lukas} do
+      {:ok, entry} = Puppy.create_health_entry(age_attrs(), actor: lukas)
+      {:ok, entry} = Puppy.update_health_entry(entry, %{due_age: 9}, actor: lukas)
+      assert entry.due_on == ~D[2026-12-09]
+    end
+
+    test "switching to a fixed date drops the age", %{lukas: lukas} do
+      {:ok, entry} = Puppy.create_health_entry(age_attrs(), actor: lukas)
+
+      {:ok, entry} =
+        Puppy.update_health_entry(
+          entry,
+          %{due_age: nil, due_age_unit: nil, due_on: ~D[2026-12-05]},
+          actor: lukas
+        )
+
+      assert entry.due_on == ~D[2026-12-05]
+      assert entry.due_age == nil
+    end
+
+    test "age needs both number and unit", %{lukas: lukas} do
+      result =
+        Puppy.create_health_entry(age_attrs(%{due_age_unit: nil, due_on: ~D[2026-12-01]}),
+          actor: lukas
+        )
+
+      assert error_for(result, :due_age_unit).message =~ "Wochen oder Monate"
+
+      result =
+        Puppy.create_health_entry(age_attrs(%{due_age: nil, due_on: ~D[2026-12-01]}),
+          actor: lukas
+        )
+
+      assert error_for(result, :due_age).message =~ "Alter"
+    end
+
+    test "age is only for care items", %{lukas: lukas} do
+      vet = age_attrs(%{kind: :vet_visit, due_time: ~T[09:30:00], due_on: ~D[2026-12-01]})
+      assert error_for(Puppy.create_health_entry(vet, actor: lukas), :due_age)
+    end
+
+    test "age needs a birth date", %{lukas: lukas} do
+      {:ok, _} =
+        Puppy.update_profile(Puppy.get_profile!(authorize?: false), %{birth_date: nil},
+          actor: lukas
+        )
+
+      result = Puppy.create_health_entry(age_attrs(), actor: lukas)
+      assert error_for(result, :due_age).message == "Erst das Geburtsdatum im Profil eintragen"
+    end
+
+    test "age out of range", %{lukas: lukas} do
+      assert error_for(
+               Puppy.create_health_entry(age_attrs(%{due_age: 105}), actor: lukas),
+               :due_age
+             )
+
+      assert error_for(
+               Puppy.create_health_entry(age_attrs(%{due_age: 37, due_age_unit: :months}),
+                 actor: lukas
+               ),
+               :due_age
+             )
+    end
+
+    test "a corrected birth date moves open age entries only", %{lukas: lukas} do
+      {:ok, open} = Puppy.create_health_entry(age_attrs(), actor: lukas)
+
+      {:ok, done} =
+        Puppy.create_health_entry(age_attrs(%{status: :done, done_on: ~D[2026-11-12]}),
+          actor: lukas
+        )
+
+      {:ok, fixed} = Puppy.create_health_entry(care_attrs(), actor: lukas)
+
+      PuppyLogWeb.Endpoint.subscribe("health_entries:changed")
+      profile = Puppy.get_profile!(authorize?: false)
+      {:ok, _} = Puppy.update_profile(profile, %{birth_date: ~D[2026-10-01]}, actor: lukas)
+
+      assert Puppy.get_health_entry!(open.id, actor: lukas).due_on == ~D[2026-11-26]
+      assert Puppy.get_health_entry!(done.id, actor: lukas).due_on == done.due_on
+      assert Puppy.get_health_entry!(fixed.id, actor: lukas).due_on == ~D[2026-12-01]
+      assert_receive %Phoenix.Socket.Broadcast{topic: "health_entries:changed"}
+    end
+
+    test "removing the birth date keeps the dates", %{lukas: lukas} do
+      {:ok, open} = Puppy.create_health_entry(age_attrs(), actor: lukas)
+      profile = Puppy.get_profile!(authorize?: false)
+
+      assert {:ok, _} = Puppy.update_profile(profile, %{birth_date: nil}, actor: lukas)
+      assert Puppy.get_health_entry!(open.id, actor: lukas).due_on == ~D[2026-12-02]
+    end
+  end
 end

@@ -17,6 +17,8 @@ defmodule PuppyLog.Puppy.HealthEntry do
     :kind,
     :title,
     :due_on,
+    :due_age,
+    :due_age_unit,
     :due_time,
     :location,
     :assignee_id,
@@ -92,6 +94,7 @@ defmodule PuppyLog.Puppy.HealthEntry do
       accept @fields ++ [:status, :done_on]
       change PuppyLog.Puppy.Changes.DefaultReminderDays
       change relate_actor(:created_by)
+      change PuppyLog.Puppy.Changes.DueOnFromAge
       change PuppyLog.Puppy.Changes.CompleteHealthEntry
     end
 
@@ -99,6 +102,13 @@ defmodule PuppyLog.Puppy.HealthEntry do
       primary? true
       accept @fields
       require_atomic? false
+      change PuppyLog.Puppy.Changes.DueOnFromAge
+    end
+
+    update :follow_birth_date do
+      description "Recomputes the due date from the stored age after the birth date changed."
+      require_atomic? false
+      change PuppyLog.Puppy.Changes.DueOnFromAge
     end
 
     update :complete do
@@ -153,6 +163,21 @@ defmodule PuppyLog.Puppy.HealthEntry do
               field: :repeat_weeks, kinds: @care_kinds, message: "Nur für Vorsorge"}
 
     validate {PuppyLog.Puppy.Validations.OnlyFor,
+              field: :due_age, kinds: @care_kinds, message: "Nur für Vorsorge"}
+
+    validate present(:due_age) do
+      message "Bitte ein Alter angeben"
+      where present(:due_age_unit)
+    end
+
+    validate present(:due_age_unit) do
+      message "Bitte Wochen oder Monate wählen"
+      where present(:due_age)
+    end
+
+    validate {PuppyLog.Puppy.Validations.AgeInRange, []}
+
+    validate {PuppyLog.Puppy.Validations.OnlyFor,
               field: :batch, kinds: [:vaccination], message: "Nur für Impfungen"}
   end
 
@@ -174,6 +199,16 @@ defmodule PuppyLog.Puppy.HealthEntry do
     attribute :due_on, :date do
       allow_nil? false
       public? true
+    end
+
+    attribute :due_age, :integer do
+      description "Care kinds only; the due date follows the birth date"
+      public? true
+    end
+
+    attribute :due_age_unit, :atom do
+      public? true
+      constraints one_of: [:weeks, :months]
     end
 
     attribute :due_time, :time do

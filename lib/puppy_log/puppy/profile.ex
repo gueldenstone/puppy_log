@@ -40,6 +40,7 @@ defmodule PuppyLog.Puppy.Profile do
       require_atomic? false
       change PuppyLog.Puppy.Changes.NormalizeChipNumber
       change relate_actor(:updated_by)
+      change PuppyLog.Puppy.Changes.MoveAgeEntries
     end
   end
 

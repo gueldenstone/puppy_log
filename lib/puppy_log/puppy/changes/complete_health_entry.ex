@@ -92,7 +92,9 @@ defmodule PuppyLog.Puppy.Changes.CompleteHealthEntry do
       notes: entry.notes,
       remind_days_before: entry.remind_days_before,
       repeat_weeks: weeks,
-      due_on: Date.add(entry.done_on, 7 * weeks)
+      due_on: Date.add(entry.done_on, 7 * weeks),
+      due_age: nil,
+      due_age_unit: nil
     }
 
     entry.__struct__

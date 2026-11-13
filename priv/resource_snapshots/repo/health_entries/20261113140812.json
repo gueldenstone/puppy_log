@@ -1,0 +1,256 @@
+{
+  "attributes": [
+    {
+      "default": "nil",
+      "size": null,
+      "type": "uuid",
+      "source": "id",
+      "references": null,
+      "allow_nil?": false,
+      "primary_key?": true,
+      "generated?": false
+    },
+    {
+      "default": "nil",
+      "size": null,
+      "type": "text",
+      "source": "kind",
+      "references": null,
+      "allow_nil?": false,
+      "primary_key?": false,
+      "generated?": false
+    },
+    {
+      "default": "nil",
+      "size": null,
+      "type": "text",
+      "source": "title",
+      "references": null,
+      "allow_nil?": false,
+      "primary_key?": false,
+      "generated?": false
+    },
+    {
+      "default": "nil",
+      "size": null,
+      "type": "date",
+      "source": "due_on",
+      "references": null,
+      "allow_nil?": false,
+      "primary_key?": false,
+      "generated?": false
+    },
+    {
+      "default": "nil",
+      "size": null,
+      "type": "bigint",
+      "source": "due_age",
+      "references": null,
+      "allow_nil?": true,
+      "primary_key?": false,
+      "generated?": false
+    },
+    {
+      "default": "nil",
+      "size": null,
+      "type": "text",
+      "source": "due_age_unit",
+      "references": null,
+      "allow_nil?": true,
+      "primary_key?": false,
+      "generated?": false
+    },
+    {
+      "default": "nil",
+      "size": null,
+      "type": "time",
+      "source": "due_time",
+      "references": null,
+      "allow_nil?": true,
+      "primary_key?": false,
+      "generated?": false
+    },
+    {
+      "default": "nil",
+      "size": null,
+      "type": "text",
+      "source": "location",
+      "references": null,
+      "allow_nil?": true,
+      "primary_key?": false,
+      "generated?": false
+    },
+    {
+      "default": "nil",
+      "size": null,
+      "type": "text",
+      "source": "notes",
+      "references": null,
+      "allow_nil?": true,
+      "primary_key?": false,
+      "generated?": false
+    },
+    {
+      "default": "nil",
+      "size": null,
+      "type": "bigint",
+      "source": "remind_days_before",
+      "references": null,
+      "allow_nil?": false,
+      "primary_key?": false,
+      "generated?": false
+    },
+    {
+      "default": "nil",
+      "size": null,
+      "type": "bigint",
+      "source": "repeat_weeks",
+      "references": null,
+      "allow_nil?": true,
+      "primary_key?": false,
+      "generated?": false
+    },
+    {
+      "default": "nil",
+      "size": null,
+      "type": "text",
+      "source": "status",
+      "references": null,
+      "allow_nil?": false,
+      "primary_key?": false,
+      "generated?": false
+    },
+    {
+      "default": "nil",
+      "size": null,
+      "type": "date",
+      "source": "done_on",
+      "references": null,
+      "allow_nil?": true,
+      "primary_key?": false,
+      "generated?": false
+    },
+    {
+      "default": "nil",
+      "size": null,
+      "type": "text",
+      "source": "batch",
+      "references": null,
+      "allow_nil?": true,
+      "primary_key?": false,
+      "generated?": false
+    },
+    {
+      "default": "nil",
+      "size": null,
+      "type": "utc_datetime_usec",
+      "source": "inserted_at",
+      "references": null,
+      "allow_nil?": false,
+      "primary_key?": false,
+      "generated?": false
+    },
+    {
+      "default": "nil",
+      "size": null,
+      "type": "utc_datetime_usec",
+      "source": "updated_at",
+      "references": null,
+      "allow_nil?": false,
+      "primary_key?": false,
+      "generated?": false
+    },
+    {
+      "default": "nil",
+      "size": null,
+      "type": "uuid",
+      "source": "assignee_id",
+      "references": {
+        "name": "health_entries_assignee_id_fkey",
+        "table": "users",
+        "multitenancy": {
+          "global": null,
+          "attribute": null,
+          "strategy": null
+        },
+        "primary_key?": true,
+        "destination_attribute": "id",
+        "deferrable": false,
+        "match_tenant?": false,
+        "on_delete": "nilify",
+        "on_update": null,
+        "destination_attribute_default": null,
+        "destination_attribute_generated": null
+      },
+      "allow_nil?": true,
+      "primary_key?": false,
+      "generated?": false
+    },
+    {
+      "default": "nil",
+      "size": null,
+      "type": "uuid",
+      "source": "previous_id",
+      "references": {
+        "name": "health_entries_previous_id_fkey",
+        "table": "health_entries",
+        "multitenancy": {
+          "global": null,
+          "attribute": null,
+          "strategy": null
+        },
+        "primary_key?": true,
+        "destination_attribute": "id",
+        "deferrable": false,
+        "match_tenant?": false,
+        "on_delete": "nilify",
+        "on_update": null,
+        "destination_attribute_default": null,
+        "destination_attribute_generated": null
+      },
+      "allow_nil?": true,
+      "primary_key?": false,
+      "generated?": false
+    },
+    {
+      "default": "nil",
+      "size": null,
+      "type": "uuid",
+      "source": "created_by_id",
+      "references": {
+        "name": "health_entries_created_by_id_fkey",
+        "table": "users",
+        "multitenancy": {
+          "global": null,
+          "attribute": null,
+          "strategy": null
+        },
+        "primary_key?": true,
+        "destination_attribute": "id",
+        "deferrable": false,
+        "match_tenant?": false,
+        "on_delete": "nilify",
+        "on_update": null,
+        "destination_attribute_default": null,
+        "destination_attribute_generated": null
+      },
+      "allow_nil?": true,
+      "primary_key?": false,
+      "generated?": false
+    }
+  ],
+  "table": "health_entries",
+  "hash": "C30AC049FD33F5AD4811D171A744FFE5610024A6685C17815CB68CBA9531174C",
+  "multitenancy": {
+    "global": null,
+    "attribute": null,
+    "strategy": null
+  },
+  "identities": [],
+  "repo": "Elixir.PuppyLog.Repo",
+  "strict?": false,
+  "base_filter": null,
+  "custom_indexes": [],
+  "custom_statements": [],
+  "has_create_action": true
+}

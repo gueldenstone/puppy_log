@@ -171,4 +171,16 @@ defmodule PuppyLog.Puppy.HealthCompletionTest do
                actor: lukas
              )
   end
+
+  test "the successor of an age entry has a fixed date", %{lukas: lukas} do
+    pin_clock(DateTime.new!(~D[2026-12-04], ~T[10:00:00], "Europe/Berlin"))
+    {:ok, _} = Puppy.create_profile(%{name: "Momo", birth_date: ~D[2026-10-07]}, actor: lukas)
+    entry = create(lukas, %{due_on: nil, due_age: 8, due_age_unit: :weeks, repeat_weeks: 4})
+
+    {:ok, _} = Puppy.complete_health_entry(entry, %{done_on: ~D[2026-12-03]}, actor: lukas)
+    [successor] = successors(entry, lukas)
+    assert successor.due_on == ~D[2026-12-31]
+    assert successor.due_age == nil
+    assert successor.due_age_unit == nil
+  end
 end
