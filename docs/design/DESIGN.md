@@ -86,6 +86,35 @@ regenerate with `python3 entwuerfe/generator/build.py entwuerfe`).
 9. **Setup order corrected** (`14`): first the home screen, then sign in inside the app (paste the link),
    then allow notifications, then test. The home screen app has its own cookies.
 
+## Decisions (2026-11-13, routines and events)
+Full rules: `docs/superpowers/specs/2026-11-12-alltag-routines-events-design.md`. Where older mockups
+disagree with that spec, the spec wins.
+
+10. **Arrival date gates everything that counts:** the puppy profile has an arrival date („Einzug“).
+    Routines can be created and edited before it (`/routines`), but occurrences, reminders and
+    statistics start on that day. A routine created during the day starts today only if its time
+    is still ahead. Without an arrival date „Heute“ and „Verlauf“ ask for it; when it lies in the future
+    „Heute“ shows „Bald geht es los“ with a link „Tagesablauf vorbereiten“.
+11. **Ticking a potty routine asks what happened:** the check button of a „Lösen“ routine opens the
+    choice „Pipi · Kaka · beides · nichts“ (outside) and creates that potty event, so the house-training
+    numbers stay complete. All other kinds tick off with one tap. Tapping the row opens a sheet with the
+    time quick select („Jetzt“, „vor 15 Min“, „vor 20 Min“, „vor 30 Min“, „Uhrzeit“): punctuality uses the
+    entered time. In „Eintragen“ the routine link is a choice (auto-selected within ±15 minutes,
+    otherwise the day's open matching routines closest first, or „Keine“) instead of the checkbox
+    „Routine gleich abhaken“ in `Eintragen.dc.html`. The „Eintragen“ button stays pinned at the bottom
+    of the sheet while it scrolls.
+12. **„Verlauf“ with a day view for corrections:** period chips (1, 2, 4 weeks; 2, 4, 6 months; 1 year),
+    adherence bars per day (per week for long periods; today highlighted, days without counted
+    routines dashed; daily bars open that day), accidents inside compared with the previous period,
+    outside/inside split for pee and poo, and per-routine stats with problem routines first (replaces
+    „Oft ausgelassen“). The day view (`/history/:date`) lists that day's routines and events: past
+    routines can be ticked off with their real time, skipped or reopened, events added, edited or
+    deleted, e.g. the 02:00 night outing logged the next morning.
+
+**URLs are English** (UI texts stay German): `/`, `/routine/:id`, `/log?type=pee|poo|meal|walk`,
+`/history`, `/history/:date`, `/health`, `/learn`, `/profile`, `/profile/edit`, `/weight`,
+`/weight/new`, `/weight/:id`, `/settings`, `/routines`, `/routines/new`, `/routines/:id`.
+
 ## Technical requirements
 - Serve the fonts (Inter, Space Grotesk, both OFL) ourselves instead of Google Fonts (AGENTS.md: no external links).
 - Input border `#84918A` instead of `#C5CEC8` (3.3:1 instead of 1.6:1 contrast, WCAG 1.4.11).

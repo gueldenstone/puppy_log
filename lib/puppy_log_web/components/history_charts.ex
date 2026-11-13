@@ -10,7 +10,8 @@ defmodule PuppyLogWeb.HistoryCharts do
 
   alias PuppyLogWeb.Format
 
-  # bar area of each column's SVG (scaled to the column width)
+  # height of a 100 % bar in px; each bar's SVG is as tall as its value, with the
+  # value label directly above it
   @bar_height 60
 
   @doc """
@@ -42,6 +43,7 @@ defmodule PuppyLogWeb.HistoryCharts do
         bucket={bucket}
         values?={@values?}
         label?={bucket.today? or rem(@count - 1 - index, @every) == 0}
+        last?={@count > 14 and index == @count - 1}
         bar_height={@bar_height}
       />
     </div>
@@ -51,6 +53,7 @@ defmodule PuppyLogWeb.HistoryCharts do
   attr :bucket, :map, required: true
   attr :values?, :boolean, required: true
   attr :label?, :boolean, required: true
+  attr :last?, :boolean, required: true
   attr :bar_height, :integer, required: true
 
   defp bar_column(%{bucket: %{first: same, last: same}} = assigns) do
@@ -60,7 +63,13 @@ defmodule PuppyLogWeb.HistoryCharts do
       aria-label={"#{Format.short_date(@bucket.first)} ansehen"}
       class="group flex min-w-0 flex-col items-center gap-0.5 rounded-md transition active:scale-95"
     >
-      <.bar_body bucket={@bucket} values?={@values?} label?={@label?} bar_height={@bar_height} />
+      <.bar_body
+        bucket={@bucket}
+        values?={@values?}
+        label?={@label?}
+        last?={@last?}
+        bar_height={@bar_height}
+      />
     </.link>
     """
   end
@@ -68,7 +77,13 @@ defmodule PuppyLogWeb.HistoryCharts do
   defp bar_column(assigns) do
     ~H"""
     <div class="flex min-w-0 flex-col items-center gap-0.5">
-      <.bar_body bucket={@bucket} values?={@values?} label?={@label?} bar_height={@bar_height} />
+      <.bar_body
+        bucket={@bucket}
+        values?={@values?}
+        label?={@label?}
+        last?={@last?}
+        bar_height={@bar_height}
+      />
     </div>
     """
   end
@@ -76,6 +91,7 @@ defmodule PuppyLogWeb.HistoryCharts do
   attr :bucket, :map, required: true
   attr :values?, :boolean, required: true
   attr :label?, :boolean, required: true
+  attr :last?, :boolean, required: true
   attr :bar_height, :integer, required: true
 
   defp bar_body(assigns) do
@@ -89,48 +105,53 @@ defmodule PuppyLogWeb.HistoryCharts do
 
     ~H"""
     <span
-      :if={@values?}
-      class={[
-        "h-4 text-[11px] leading-4 tabular-nums",
-        if(@bucket.today?, do: "font-semibold text-ink", else: "text-muted")
-      ]}
+      class="flex w-full flex-col items-center justify-end gap-0.5"
+      style={"height: #{@bar_height + if(@values?, do: 18, else: 0)}px"}
     >
-      {@bucket.rate}
+      <span
+        :if={@values?}
+        class={[
+          "h-4 text-[11px] leading-4 tabular-nums",
+          if(@bucket.today?, do: "font-semibold text-ink", else: "text-muted")
+        ]}
+      >
+        {@bucket.rate}
+      </span>
+      <svg
+        viewBox={"0 0 20 #{@height}"}
+        preserveAspectRatio="none"
+        class="block w-full transition group-hover:opacity-80"
+        style={"height: #{@height}px"}
+        role="img"
+        aria-label={bar_label(@bucket)}
+      >
+        <rect
+          :if={@bucket.rate}
+          width="20"
+          height={@height}
+          rx="3"
+          fill={if @bucket.today?, do: "#8CCBB4", else: "#0E6B52"}
+          stroke={@bucket.today? && "#0E6B52"}
+          stroke-width={@bucket.today? && "2"}
+          vector-effect="non-scaling-stroke"
+        />
+        <rect
+          :if={!@bucket.rate}
+          x="0.5"
+          y="0.5"
+          width="19"
+          height={@height - 1}
+          rx="2"
+          fill="none"
+          stroke={if @bucket.today?, do: "#0E6B52", else: "#A9B5AE"}
+          stroke-dasharray="3 2"
+          vector-effect="non-scaling-stroke"
+        />
+      </svg>
     </span>
-    <svg
-      viewBox={"0 0 20 #{@bar_height}"}
-      preserveAspectRatio="none"
-      class="block h-[60px] w-full transition group-hover:opacity-80"
-      role="img"
-      aria-label={bar_label(@bucket)}
-    >
-      <rect
-        :if={@bucket.rate}
-        x="0"
-        y={@bar_height - @height}
-        width="20"
-        height={@height}
-        rx="3"
-        fill={if @bucket.today?, do: "#8CCBB4", else: "#0E6B52"}
-        stroke={@bucket.today? && "#0E6B52"}
-        stroke-width={@bucket.today? && "2"}
-        vector-effect="non-scaling-stroke"
-      />
-      <rect
-        :if={!@bucket.rate}
-        x="0.5"
-        y={@bar_height - @height}
-        width="19"
-        height={@height - 0.5}
-        rx="2"
-        fill="none"
-        stroke={if @bucket.today?, do: "#0E6B52", else: "#A9B5AE"}
-        stroke-dasharray="3 2"
-        vector-effect="non-scaling-stroke"
-      />
-    </svg>
     <span class={[
-      "h-4 max-w-full overflow-visible whitespace-nowrap text-[12px] leading-4",
+      "h-4 whitespace-nowrap text-[12px] leading-4",
+      @last? && "self-end",
       if(@bucket.today?, do: "font-semibold text-ink", else: "text-muted")
     ]}>
       {if @label?, do: @bucket.label}

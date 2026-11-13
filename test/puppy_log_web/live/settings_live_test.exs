@@ -79,7 +79,11 @@ defmodule PuppyLogWeb.SettingsLiveTest do
 
   test "saves quiet hours 22:00–06:30", %{conn: conn, user: user} do
     {:ok, view, _html} = live(conn, ~p"/settings")
-    assert render(view) =~ "In dieser Zeit gibt es keine Erinnerungen."
+    html = render(view)
+    assert html =~ "In dieser Zeit gibt es keine Erinnerungen."
+    # quiet hours drop reminders, they are not sent afterwards (spec)
+    assert html =~ "Erinnerungen fallen aus, nichts wird nachgeholt"
+    refute html =~ "danach nachgeholt"
 
     view
     |> form("#quiet-hours-form",

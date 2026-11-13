@@ -419,9 +419,12 @@ defmodule PuppyLogWeb.EventForm do
 
           <.field_errors errors={@other_errors} />
 
-          <.action_button type="submit" phx-disable-with="Speichern …">
-            {if @event, do: "Speichern", else: "Eintragen"}
-          </.action_button>
+          <%!-- stays visible while the sheet scrolls; covers the sheet's bottom padding (a sticky box stops at the padding edge, hence the negative offset) --%>
+          <div class="sticky -bottom-[calc(1.5rem+env(safe-area-inset-bottom))] -mx-4 -mb-[calc(1.5rem+env(safe-area-inset-bottom))] bg-canvas px-4 pt-2 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
+            <.action_button type="submit" phx-disable-with="Speichern …">
+              {if @event, do: "Speichern", else: "Eintragen"}
+            </.action_button>
+          </div>
         </form>
       </.sheet>
     </div>

@@ -4,6 +4,8 @@ defmodule PuppyLog.Notifications.PushTest do
   alias PuppyLog.Notifications
   alias PuppyLog.Notifications.Push
 
+  import ExUnit.CaptureLog
+
   setup do
     %{lukas: user_fixture(%{name: "Lukas"}), lisa: user_fixture(%{name: "Lisa"})}
   end
@@ -62,8 +64,10 @@ defmodule PuppyLog.Notifications.PushTest do
     {subscription, _keys} = subscription_fixture(lukas)
     Req.Test.stub(Push, &Req.Test.json(Plug.Conn.put_status(&1, 403), %{reason: "BadJwtToken"}))
 
-    assert {:error, {:http_error, 403, %{"reason" => "BadJwtToken"}}} =
-             Push.deliver(subscription, %{title: "x"})
+    {result, log} = with_log(fn -> Push.deliver(subscription, %{title: "x"}) end)
+
+    assert {:error, {:http_error, 403, %{"reason" => "BadJwtToken"}}} = result
+    assert log =~ "Push to #{subscription.id} failed with HTTP 403"
 
     assert length(Notifications.list_push_subscriptions!(actor: lukas)) == 1
   end
@@ -72,8 +76,10 @@ defmodule PuppyLog.Notifications.PushTest do
     {subscription, _keys} = subscription_fixture(lukas)
     Req.Test.stub(Push, &Req.Test.transport_error(&1, :econnrefused))
 
-    assert {:error, %Req.TransportError{reason: :econnrefused}} =
-             Push.deliver(subscription, %{title: "x"})
+    {result, log} = with_log(fn -> Push.deliver(subscription, %{title: "x"}) end)
+
+    assert {:error, %Req.TransportError{reason: :econnrefused}} = result
+    assert log =~ "Push to #{subscription.id} failed: connection refused"
   end
 
   describe "send_test" do
