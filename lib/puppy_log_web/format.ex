@@ -49,6 +49,25 @@ defmodule PuppyLogWeb.Format do
     end
   end
 
+  @doc ~S"""
+      iex> PuppyLogWeb.Format.month_short(~D[2026-11-19])
+      "Nov"
+  """
+  def month_short(%Date{month: month}), do: Enum.at(@months_short, month - 1)
+
+  @doc ~S"""
+  Numeric day and month, with the year when it is not `today`'s.
+
+      iex> PuppyLogWeb.Format.day_month_numeric(~D[2026-11-01], ~D[2026-11-13])
+      "01.11."
+      iex> PuppyLogWeb.Format.day_month_numeric(~D[2027-01-05], ~D[2026-11-13])
+      "05.01.2027"
+  """
+  def day_month_numeric(%Date{year: year} = date, %Date{year: year}),
+    do: Calendar.strftime(date, "%d.%m.")
+
+  def day_month_numeric(%Date{} = date, %Date{}), do: Calendar.strftime(date, "%d.%m.%Y")
+
   def weekday(%Date{} = date), do: Enum.at(@weekdays, Date.day_of_week(date) - 1)
 
   @doc ~S"""
