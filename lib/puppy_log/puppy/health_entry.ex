@@ -89,15 +89,33 @@ defmodule PuppyLog.Puppy.HealthEntry do
 
     create :create do
       primary? true
-      accept @fields
+      accept @fields ++ [:status, :done_on]
       change PuppyLog.Puppy.Changes.DefaultReminderDays
       change relate_actor(:created_by)
+      change PuppyLog.Puppy.Changes.CompleteHealthEntry
     end
 
     update :update do
       primary? true
       accept @fields
       require_atomic? false
+    end
+
+    update :complete do
+      description "Marks an open entry done; a repeating care item gets its successor."
+      require_atomic? false
+
+      argument :done_on, :date
+      argument :batch, :string
+
+      change PuppyLog.Puppy.Changes.CompleteHealthEntry
+    end
+
+    update :reopen do
+      description "Back to open; removes the successor if nobody touched it yet."
+      require_atomic? false
+
+      change PuppyLog.Puppy.Changes.ReopenHealthEntry
     end
   end
 

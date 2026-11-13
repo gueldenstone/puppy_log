@@ -108,13 +108,11 @@ defmodule PuppyLog.Puppy.HealthEntryTest do
       )
 
     for {title, done_on} <- [{"D1", ~D[2026-10-01]}, {"D2", ~D[2026-10-20]}] do
-      {:ok, entry} = Puppy.create_health_entry(care_attrs(%{title: title}), actor: lukas)
-
-      entry
-      |> Ash.Changeset.for_update(:update, %{}, actor: lukas)
-      |> Ash.Changeset.force_change_attribute(:status, :done)
-      |> Ash.Changeset.force_change_attribute(:done_on, done_on)
-      |> Ash.update!()
+      {:ok, _} =
+        Puppy.create_health_entry(
+          care_attrs(%{title: title, status: :done, done_on: done_on}),
+          actor: lukas
+        )
     end
 
     assert Puppy.list_health_entries!(actor: lukas) |> Enum.map(& &1.title) ==

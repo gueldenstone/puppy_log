@@ -51,6 +51,8 @@ defmodule PuppyLog.Puppy do
       define :get_health_entry, action: :read, get_by: [:id]
       define :create_health_entry, action: :create
       define :update_health_entry, action: :update
+      define :complete_health_entry, action: :complete
+      define :reopen_health_entry, action: :reopen
       define :delete_health_entry, action: :destroy
     end
   end
