@@ -44,6 +44,18 @@ This is a web application written using the Phoenix web framework.
 - Ensure **clean typography, spacing, and layout balance** for a refined, premium look
 - Focus on **delightful details** like hover effects, loading states, and smooth page transitions
 
+## Local development setup
+
+- Dev server: `mix phx.server` (or `iex -S mix phx.server`), bound to http://localhost:4000. The reminder process (`PuppyLog.Daily.Reminders`) runs in dev too and sends real Web Push notifications.
+- Phones reach the dev server through Tailscale Serve (tailnet only): `tailscale serve --bg --https=443 http://localhost:4000` → https://mbp.tail6676a.ts.net. On macOS the CLI is `/Applications/Tailscale.app/Contents/MacOS/Tailscale`.
+- Tidewave MCP for Claude Code is registered locally (not in the repo) with
+  `claude mcp add --scope local --transport http tidewave http://localhost:4000/tidewave/mcp`.
+  It only connects while the dev server is running; after starting the server use `/mcp reconnect tidewave`.
+  For `browser_eval`, use a page opened at http://localhost:4000 and the session id (sid) the user gives you.
+  `lib/puppy_log_web/endpoint.ex` additionally allows the Tailscale origin for Tidewave (dev only; Tidewave can run arbitrary code, so every tailnet device gets that power).
+- Household members and sign-in links: `mix puppy_log.user.create EMAIL --name NAME`, `mix puppy_log.magic_link EMAIL --base-url https://mbp.tail6676a.ts.net`.
+- Language: UI texts and the conversation with the user are German; code, comments, docs, commit messages, URL paths and query parameters are English.
+
 <!-- usage-rules-start -->
 <!-- usage_rules-start -->
 
