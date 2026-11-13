@@ -71,6 +71,16 @@ defmodule PuppyLog.Daily.Occurrence do
       change relate_actor(:completed_by, allow_nil?: true)
     end
 
+    update :attach_event do
+      description """
+      Internal: links (or, with nil, unlinks) an event to an occurrence that was
+      already ticked off by hand. The recorded outcome stays as it is.
+      """
+
+      argument :event_id, :uuid
+      change set_attribute(:event_id, arg(:event_id))
+    end
+
     update :reopen do
       accept []
       change set_attribute(:status, :open)
