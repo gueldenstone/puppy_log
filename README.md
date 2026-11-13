@@ -104,6 +104,11 @@ Health entries send **no Web Push**. Reminders come from the calendar subscripti
   `/settings` on the phone through Tailscale Serve (`https://mbp.tail6676a.ts.net`) so the
   copied address is reachable from the phone. A subscribed calendar only refreshes while the
   phone is in the tailnet.
+* The token is kept out of the app's logs: the endpoint does not log `/calendar/...` requests
+  (`PuppyLogWeb.Endpoint.log_level/1`), the route has `log: false`, and `token` is in
+  `:filter_parameters`. A reverse proxy in front of the app (for example in production) still
+  writes the full path, token included, to its access log; restrict or filter those logs, and
+  rotate the address in „Kalender-Abo“ if one leaks.
 
 ## Learn more
 

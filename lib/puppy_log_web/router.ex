@@ -31,7 +31,8 @@ defmodule PuppyLogWeb.Router do
   scope "/", PuppyLogWeb do
     pipe_through :calendar_feed
 
-    get "/calendar/:token", CalendarController, :show
+    # No router dispatch log line either: the path carries the token.
+    get "/calendar/:token", CalendarController, :show, log: false
   end
 
   scope "/", PuppyLogWeb do
