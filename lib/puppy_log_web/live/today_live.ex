@@ -122,19 +122,21 @@ defmodule PuppyLogWeb.TodayLive do
               <.action_button variant={:secondary} navigate={~p"/profile/edit"}>
                 Einzugsdatum eintragen
               </.action_button>
+              <.prepare_routines_link />
             </:action>
           </.empty_state>
         <% {:before_arrival, date} -> %>
           <.empty_state icon="clock" title="Bald geht es los">
             Ab dem Einzug am {Format.long_date(date)} stehen hier eure Routinen zum Abhaken.
+            <:action>
+              <.prepare_routines_link />
+            </:action>
           </.empty_state>
         <% :no_routines -> %>
           <.empty_state icon="clock" title="Legt euren Tagesablauf an">
             Fütterung, Pipi-Runden, Schlaf: einmal festlegen, dann hakt ihr hier jeden Tag ab und bekommt Erinnerungen auf beide Handys.
             <:action>
-              <%!-- plain path until the routines pages add the route --%>
-              <%!-- TODO(Task 9): ~p"/routines/new" once the route exists --%>
-              <.action_button navigate="/routines/new">
+              <.action_button navigate={~p"/routines/new"}>
                 <.pl_icon name="plus" class="size-5" /> Erste Routine anlegen
               </.action_button>
             </:action>
@@ -212,6 +214,18 @@ defmodule PuppyLogWeb.TodayLive do
       current_user={@current_user}
       return_to={~p"/"}
     />
+    """
+  end
+
+  # Routines can be set up before the puppy moves in.
+  defp prepare_routines_link(assigns) do
+    ~H"""
+    <.link
+      navigate={~p"/routines"}
+      class="mt-1 flex min-h-11 items-center justify-center gap-1 rounded-xl text-[15px] font-semibold text-accent transition hover:bg-accent-tint active:scale-[0.98]"
+    >
+      Tagesablauf vorbereiten <.pl_icon name="right" class="size-4" />
+    </.link>
     """
   end
 

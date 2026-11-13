@@ -44,6 +44,10 @@ defmodule PuppyLogWeb.Router do
 
       live "/settings", SettingsLive
 
+      live "/routines", RoutinesLive
+      live "/routines/new", RoutineFormLive, :new
+      live "/routines/:id", RoutineFormLive, :edit
+
       live "/sign-in", SignInLive
       live "/magic_link/:token", MagicLinkLive
     end

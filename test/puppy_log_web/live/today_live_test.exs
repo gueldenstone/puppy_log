@@ -288,6 +288,19 @@ defmodule PuppyLogWeb.TodayLiveTest do
 
     assert render(view) =~ "Tragt im Profil das Einzugsdatum ein"
     assert has_element?(view, ~s{a[href="/profile/edit"]})
+    assert has_element?(view, ~s{a[href="/routines"]}, "Tagesablauf vorbereiten")
+  end
+
+  test "before the arrival offers to prepare the daily plan", %{conn: conn, user: user} do
+    {:ok, _} =
+      Puppy.create_profile(%{name: "Bruno", arrival_date: Date.add(Clock.today(), 7)},
+        actor: user
+      )
+
+    {:ok, view, _html} = live(conn, ~p"/")
+
+    assert render(view) =~ "Bald geht es los"
+    assert has_element?(view, ~s{a[href="/routines"]}, "Tagesablauf vorbereiten")
   end
 
   test "without routines asks to set up the daily plan", %{conn: conn, user: user} do

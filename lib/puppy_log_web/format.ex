@@ -36,6 +36,25 @@ defmodule PuppyLogWeb.Format do
   def weekday(%Date{} = date), do: Enum.at(@weekdays, Date.day_of_week(date) - 1)
 
   @doc ~S"""
+  Short German summary of routine weekdays (1 = Monday ... 7 = Sunday).
+
+      iex> PuppyLogWeb.Format.weekdays([1, 2, 3, 4, 5, 6, 7])
+      "täglich"
+      iex> PuppyLogWeb.Format.weekdays([1, 2, 3, 4, 5])
+      "Mo–Fr"
+      iex> PuppyLogWeb.Format.weekdays([5, 1, 3])
+      "Mo, Mi, Fr"
+  """
+  def weekdays(days) when is_list(days), do: days |> Enum.sort() |> Enum.uniq() |> summary()
+
+  defp summary([1, 2, 3, 4, 5, 6, 7]), do: "täglich"
+  defp summary([1, 2, 3, 4, 5]), do: "Mo–Fr"
+  defp summary(days), do: Enum.map_join(days, ", ", &Enum.at(@weekdays, &1 - 1))
+
+  @doc "Weekday abbreviations Mo ... So, in order."
+  def weekday_names, do: @weekdays
+
+  @doc ~S"""
   Groups a 15 digit chip number for reading: "276 098 106 543 210".
 
       iex> PuppyLogWeb.Format.chip_number("276098106543210")

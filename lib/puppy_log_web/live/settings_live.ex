@@ -1,13 +1,14 @@
 defmodule PuppyLogWeb.SettingsLive do
   @moduledoc """
-  Household and notifications screen („Haushalt & Mitteilungen“, entwuerfe/08): members, push setup of this
-  device, test notifications. Quiet hours and reminder settings follow with
-  the routines.
+  Household and notifications screen („Haushalt & Mitteilungen“, entwuerfe/08):
+  members with their reminder switch, quiet hours, push setup of this device,
+  test notifications and the way to the routines.
   """
 
   use PuppyLogWeb, :live_view
 
-  alias PuppyLog.{Accounts, Notifications}
+  alias AshPhoenix.Form
+  alias PuppyLog.{Accounts, Daily, Notifications}
 
   on_mount {PuppyLogWeb.LiveUserAuth, :live_user_required}
 
@@ -17,6 +18,8 @@ defmodule PuppyLogWeb.SettingsLive do
   def mount(_params, _session, socket) do
     if connected?(socket) do
       PuppyLogWeb.Endpoint.subscribe("push_subscriptions:changed")
+      PuppyLogWeb.Endpoint.subscribe("users:changed")
+      PuppyLogWeb.Endpoint.subscribe("daily_settings:changed")
     end
 
     {:ok,
@@ -29,7 +32,8 @@ defmodule PuppyLogWeb.SettingsLive do
        last_result: nil,
        delay_seconds: @delay_seconds
      )
-     |> load()}
+     |> load()
+     |> assign_quiet_hours()}
   end
 
   @impl true
@@ -51,9 +55,62 @@ defmodule PuppyLogWeb.SettingsLive do
               <p class="font-medium">{Format.user_name(member)}</p>
               <p class="text-[12.5px] text-muted">{devices_text(@subscriptions, member)}</p>
             </div>
+            <.switch
+              id={"reminders-#{member.id}"}
+              checked={member.receives_reminders}
+              label={"Erinnerungen für #{Format.user_name(member)}"}
+              phx-click="toggle_reminders"
+              phx-value-id={member.id}
+            />
           </li>
         </ul>
       </.card>
+      <p class="px-1 text-[12.5px] leading-[17px] text-muted">
+        Der Schalter legt fest, wer Erinnerungen an Routinen bekommt. Erledigt jemand eine Routine, ersetzt eine kurze Mitteilung die Erinnerung auf dem anderen Handy.
+      </p>
+
+      <.section_label class="pt-1">Ruhezeiten</.section_label>
+      <.form
+        for={@quiet_hours}
+        id="quiet-hours-form"
+        phx-change="save_quiet_hours"
+        phx-submit="save_quiet_hours"
+      >
+        <.card flush>
+          <label class="flex min-h-16 cursor-pointer items-center gap-3 px-4 py-2.5">
+            <div class="min-w-0 flex-1">
+              <p class="font-medium">Nachts nicht stören</p>
+              <p class="text-[12.5px] text-muted">Erinnerungen werden danach nachgeholt</p>
+            </div>
+            <.switch
+              id="quiet-hours-enabled"
+              name={@quiet_hours[:quiet_hours_enabled].name}
+              checked={@quiet_hours[:quiet_hours_enabled].value in [true, "true"]}
+              label="Nachts nicht stören"
+            />
+          </label>
+          <div
+            :for={{field, label} <- [quiet_from: "Von", quiet_until: "Bis"]}
+            class={[
+              "flex min-h-14 items-center gap-3 border-t border-divider px-4 py-1.5 transition-opacity",
+              @quiet_hours[:quiet_hours_enabled].value not in [true, "true"] && "opacity-60"
+            ]}
+          >
+            <label for={@quiet_hours[field].id} class="flex-1 font-medium">{label}</label>
+            <div class="w-32">
+              <.input
+                field={@quiet_hours[field]}
+                type="time"
+                value={time_value(@quiet_hours[field].value)}
+                class="h-11 w-full rounded-xl border border-field bg-card px-3 text-right text-base tabular-nums outline-none transition focus:border-accent focus:ring-4 focus:ring-accent/15"
+              />
+            </div>
+          </div>
+        </.card>
+      </.form>
+      <p class="px-1 text-[12.5px] leading-[17px] text-muted">
+        In dieser Zeit gibt es keine Erinnerungen.
+      </p>
 
       <.section_label class="pt-1">Dieses Gerät</.section_label>
       <section
@@ -138,10 +195,19 @@ defmodule PuppyLogWeb.SettingsLive do
         </div>
       </.card>
 
+      <.section_label class="pt-1">Mehr</.section_label>
       <.card flush>
         <.link
+          navigate={~p"/routines"}
+          class="flex min-h-14 items-center gap-3 px-4 font-medium transition hover:bg-canvas active:bg-mist"
+        >
+          <.pl_icon name="repeat" class="size-5" />
+          <span class="flex-1">Routinen verwalten</span>
+          <.pl_icon name="right" class="size-[18px] text-muted/70" />
+        </.link>
+        <.link
           href={~p"/sign-out"}
-          class="flex min-h-14 items-center gap-3 px-4 font-medium text-danger active:bg-danger-tint"
+          class="flex min-h-14 items-center gap-3 border-t border-divider px-4 font-medium text-danger active:bg-danger-tint"
         >
           <.pl_icon name="logout" class="size-5" /> Auf diesem Gerät abmelden
         </.link>
@@ -297,6 +363,30 @@ defmodule PuppyLogWeb.SettingsLive do
     {:reply, %{ok: true}, socket}
   end
 
+  def handle_event("toggle_reminders", %{"id" => id}, socket) do
+    actor = socket.assigns.current_user
+
+    with %{} = member <- Enum.find(socket.assigns.members, &(&1.id == id)),
+         {:ok, _member} <-
+           Accounts.set_reminders(member, %{receives_reminders: !member.receives_reminders},
+             actor: actor
+           ) do
+      {:noreply, load(socket)}
+    else
+      _ -> {:noreply, put_flash(socket, :error, "Das hat leider nicht geklappt.")}
+    end
+  end
+
+  def handle_event("save_quiet_hours", %{"settings" => params}, socket) do
+    case Form.submit(socket.assigns.quiet_hours, params: params) do
+      {:ok, settings} ->
+        {:noreply, assign(socket, quiet_hours: quiet_hours_form(settings, socket))}
+
+      {:error, form} ->
+        {:noreply, assign(socket, quiet_hours: form)}
+    end
+  end
+
   def handle_event("send_test", %{"target" => target, "delay" => delay}, socket) do
     target = if target == "all", do: :all, else: :me
     delay = if delay == "0", do: 0, else: @delay_seconds
@@ -339,9 +429,11 @@ defmodule PuppyLogWeb.SettingsLive do
   @impl true
   def handle_info({:delayed_result, result}, socket), do: {:noreply, show_result(socket, result)}
 
-  def handle_info(%Phoenix.Socket.Broadcast{topic: "push_subscriptions:changed"}, socket) do
-    {:noreply, load(socket)}
+  def handle_info(%Phoenix.Socket.Broadcast{topic: "daily_settings:changed"}, socket) do
+    {:noreply, assign_quiet_hours(socket)}
   end
+
+  def handle_info(%Phoenix.Socket.Broadcast{}, socket), do: {:noreply, load(socket)}
 
   defp send_test(target, actor), do: Notifications.send_test_push(target, actor: actor)
 
@@ -360,6 +452,31 @@ defmodule PuppyLogWeb.SettingsLive do
       subscriptions: Notifications.list_push_subscriptions!(actor: actor)
     )
   end
+
+  defp assign_quiet_hours(socket) do
+    settings = Daily.settings(actor: socket.assigns.current_user)
+    assign(socket, quiet_hours: quiet_hours_form(settings, socket))
+  end
+
+  # Saving always upserts the single settings row with all three values.
+  defp quiet_hours_form(settings, socket) do
+    Daily.Settings
+    |> Form.for_create(:save,
+      actor: socket.assigns.current_user,
+      domain: Daily,
+      as: "settings",
+      params: %{
+        "quiet_hours_enabled" => to_string(settings.quiet_hours_enabled),
+        "quiet_from" => time_value(settings.quiet_from),
+        "quiet_until" => time_value(settings.quiet_until)
+      }
+    )
+    |> to_form()
+  end
+
+  defp time_value(%Time{} = time), do: Calendar.strftime(time, "%H:%M")
+  defp time_value(value) when is_binary(value), do: String.slice(value, 0, 5)
+  defp time_value(nil), do: nil
 
   defp devices_text(subscriptions, member) do
     case Enum.count(subscriptions, &(&1.user_id == member.id)) do

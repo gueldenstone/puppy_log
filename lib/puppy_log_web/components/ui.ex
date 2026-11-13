@@ -55,6 +55,10 @@ defmodule PuppyLogWeb.UI do
       ~s(<circle cx="12" cy="12" r="9"/><path d="M4 8c5 1 11 1 16 0M4 16c5-1 11-1 16 0"/>),
     "alert" =>
       ~s(<path d="M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/>),
+    "target" =>
+      ~s(<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/>),
+    "repeat" =>
+      ~s(<path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/>),
     "sparkle" =>
       ~s(<path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5L18 18M6 18l2.5-2.5M15.5 8.5L18 6"/>)
   }
@@ -211,6 +215,38 @@ defmodule PuppyLogWeb.UI do
         style={"width: #{@value}%"}
       />
     </div>
+    """
+  end
+
+  @doc """
+  On/off switch: a checkbox with `role="switch"`. With `name` it takes part in
+  a form (a hidden "false" is sent when off); without, use `phx-click`.
+  """
+  attr :id, :string, default: nil
+  attr :name, :string, default: nil
+  attr :checked, :boolean, required: true
+  attr :label, :string, required: true, doc: "accessible name"
+  attr :rest, :global, include: ~w(disabled form)
+
+  def switch(assigns) do
+    ~H"""
+    <input :if={@name} type="hidden" name={@name} value="false" />
+    <input
+      type="checkbox"
+      role="switch"
+      id={@id}
+      name={@name}
+      value="true"
+      checked={@checked}
+      aria-label={@label}
+      class={[
+        "relative h-[31px] w-[51px] shrink-0 cursor-pointer appearance-none rounded-full bg-mist outline-none transition-colors duration-200",
+        "before:absolute before:top-[2px] before:left-[2px] before:size-[27px] before:rounded-full before:bg-white before:shadow-[0_1px_3px_rgba(0,0,0,0.25)] before:transition-transform before:duration-200 before:content-['']",
+        "checked:bg-accent checked:before:translate-x-5 focus-visible:ring-4 focus-visible:ring-accent/25",
+        "disabled:cursor-not-allowed disabled:opacity-50"
+      ]}
+      {@rest}
+    />
     """
   end
 

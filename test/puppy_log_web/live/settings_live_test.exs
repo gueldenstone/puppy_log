@@ -1,6 +1,7 @@
 defmodule PuppyLogWeb.SettingsLiveTest do
   use PuppyLogWeb.ConnCase, async: false
 
+  alias PuppyLog.{Accounts, Daily}
   alias PuppyLog.Notifications.Push
 
   setup :register_and_sign_in
@@ -58,5 +59,47 @@ defmodule PuppyLogWeb.SettingsLiveTest do
     view |> element("button[phx-value-target='me'][phx-value-delay='0']") |> render_click()
 
     assert render_async(view) =~ "1 von 1 an den Push-Dienst übergeben"
+  end
+
+  test "turns off reminders for Riv", %{conn: conn, user: user} do
+    riv = user_fixture(%{name: "Riv"})
+    {:ok, view, _html} = live(conn, ~p"/settings")
+
+    assert has_element?(view, ~s{#member-#{riv.id} input[role="switch"][checked]})
+
+    view |> element(~s{#member-#{riv.id} input[role="switch"]}) |> render_click()
+
+    refute has_element?(view, ~s{#member-#{riv.id} input[role="switch"][checked]})
+    assert has_element?(view, ~s{#member-#{user.id} input[role="switch"][checked]})
+
+    users = Accounts.list_users!(actor: user)
+    assert %{receives_reminders: false} = Enum.find(users, &(&1.id == riv.id))
+    assert %{receives_reminders: true} = Enum.find(users, &(&1.id == user.id))
+  end
+
+  test "saves quiet hours 22:00–06:30", %{conn: conn, user: user} do
+    {:ok, view, _html} = live(conn, ~p"/settings")
+    assert render(view) =~ "In dieser Zeit gibt es keine Erinnerungen."
+
+    view
+    |> form("#quiet-hours-form",
+      settings: %{quiet_hours_enabled: "true", quiet_from: "21:00", quiet_until: "07:00"}
+    )
+    |> render_change()
+
+    view
+    |> form("#quiet-hours-form", settings: %{quiet_from: "22:00", quiet_until: "06:30"})
+    |> render_change()
+
+    assert %{quiet_hours_enabled: true, quiet_from: ~T[22:00:00], quiet_until: ~T[06:30:00]} =
+             Daily.settings(actor: user)
+
+    assert has_element?(view, ~s{input[name="settings[quiet_from]"][value="22:00"]})
+  end
+
+  test "links to the routines", %{conn: conn} do
+    {:ok, view, _html} = live(conn, ~p"/settings")
+
+    assert has_element?(view, ~s{a[href="/routines"]}, "Routinen verwalten")
   end
 end
