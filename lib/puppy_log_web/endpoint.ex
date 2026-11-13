@@ -32,7 +32,9 @@ defmodule PuppyLogWeb.Endpoint do
     raise_on_missing_only: code_reloading?
 
   if Mix.env() == :dev do
-    plug Tidewave
+    # Also reachable through Tailscale Serve (tailnet only). Tidewave can run
+    # arbitrary code, so every device in the tailnet gets that power in dev.
+    plug Tidewave, allowed_origins: ["//mbp.tail6676a.ts.net"]
   end
 
   # Code reloading can be explicitly enabled under the
