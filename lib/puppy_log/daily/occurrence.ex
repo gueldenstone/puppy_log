@@ -13,6 +13,7 @@ defmodule PuppyLog.Daily.Occurrence do
     notifiers: [Ash.Notifier.PubSub]
 
   alias PuppyLog.Daily.Changes.CompleteOccurrence
+  alias PuppyLog.Daily.Notify
 
   @snapshot [
     :name,
@@ -63,12 +64,30 @@ defmodule PuppyLog.Daily.Occurrence do
       argument :event_id, :uuid
       change CompleteOccurrence
       change relate_actor(:completed_by, allow_nil?: true)
+      change after_transaction(&notify_outcome/3)
     end
 
     update :skip do
       require_atomic? false
       change {CompleteOccurrence, status: :skipped}
       change relate_actor(:completed_by, allow_nil?: true)
+      change after_transaction(&notify_outcome/3)
+    end
+
+    update :mark_reminded do
+      description """
+      Internal: records that the reminder goes out. Run as a bulk update over
+      `reminded_at == nil`, so a reminder is claimed (and sent) only once.
+      """
+
+      argument :at, :utc_datetime_usec, allow_nil?: false
+      change set_attribute(:reminded_at, arg(:at))
+    end
+
+    update :mark_follow_up_sent do
+      description "Internal: like `:mark_reminded`, for the follow-up."
+      argument :at, :utc_datetime_usec, allow_nil?: false
+      change set_attribute(:follow_up_sent_at, arg(:at))
     end
 
     update :attach_event do
@@ -186,4 +205,12 @@ defmodule PuppyLog.Daily.Occurrence do
   identities do
     identity :one_per_day, [:routine_id, :date]
   end
+
+  @doc false
+  def notify_outcome(_changeset, {:ok, occurrence} = result, context) do
+    Notify.after_outcome(occurrence, context.actor)
+    result
+  end
+
+  def notify_outcome(_changeset, result, _context), do: result
 end

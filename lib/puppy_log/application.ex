@@ -7,18 +7,22 @@ defmodule PuppyLog.Application do
 
   @impl true
   def start(_type, _args) do
-    children = [
-      PuppyLogWeb.Telemetry,
-      PuppyLog.Repo,
-      {Ecto.Migrator,
-       repos: Application.fetch_env!(:puppy_log, :ecto_repos), skip: skip_migrations?()},
-      {DNSCluster, query: Application.get_env(:puppy_log, :dns_cluster_query) || :ignore},
-      {Phoenix.PubSub, name: PuppyLog.PubSub},
-      {Task.Supervisor, name: PuppyLog.TaskSupervisor},
-      # Start to serve requests, typically the last entry
-      PuppyLogWeb.Endpoint,
-      {AshAuthentication.Supervisor, [otp_app: :puppy_log]}
-    ]
+    children =
+      [
+        PuppyLogWeb.Telemetry,
+        PuppyLog.Repo,
+        {Ecto.Migrator,
+         repos: Application.fetch_env!(:puppy_log, :ecto_repos), skip: skip_migrations?()},
+        {DNSCluster, query: Application.get_env(:puppy_log, :dns_cluster_query) || :ignore},
+        {Phoenix.PubSub, name: PuppyLog.PubSub},
+        {Task.Supervisor, name: PuppyLog.TaskSupervisor}
+      ] ++
+        reminders() ++
+        [
+          # Start to serve requests, typically the last entry
+          PuppyLogWeb.Endpoint,
+          {AshAuthentication.Supervisor, [otp_app: :puppy_log]}
+        ]
 
     # See https://elixir.hexdocs.pm/Supervisor.html
     # for other strategies and supported options
@@ -32,6 +36,10 @@ defmodule PuppyLog.Application do
   def config_change(changed, _new, removed) do
     PuppyLogWeb.Endpoint.config_change(changed, removed)
     :ok
+  end
+
+  defp reminders do
+    if PuppyLog.Daily.Reminders.enabled?(), do: [PuppyLog.Daily.Reminders], else: []
   end
 
   defp skip_migrations?() do

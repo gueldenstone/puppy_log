@@ -55,3 +55,7 @@ config :puppy_log, PuppyLog.Notifications.Push,
   req_options: [plug: {Req.Test, PuppyLog.Notifications.Push}, retry: false]
 
 config :puppy_log, :uploads_dir, Path.expand("../tmp/test_uploads", __DIR__)
+
+# Tests call PuppyLog.Daily.Reminders.tick/1 themselves; done notifications run inline.
+config :puppy_log, PuppyLog.Daily.Reminders, enabled: false
+config :puppy_log, PuppyLog.Daily.Notify, async: false

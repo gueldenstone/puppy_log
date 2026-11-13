@@ -85,6 +85,9 @@ config :web_push_ex, :vapid, subject: "mailto:puppy-log@example.com"
 # Extra options for the HTTP client used to deliver pushes (Req.Test in tests).
 config :puppy_log, PuppyLog.Notifications.Push, req_options: []
 
+# Routine reminders by push, ticking every minute (off in tests).
+config :puppy_log, PuppyLog.Daily.Reminders, enabled: true
+
 # Remember-me and session cookies are only sent over HTTPS when this is true.
 config :puppy_log, :secure_cookies, true
 
