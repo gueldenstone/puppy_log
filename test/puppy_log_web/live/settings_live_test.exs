@@ -141,7 +141,8 @@ defmodule PuppyLogWeb.SettingsLiveTest do
 
       token = Ash.get!(PuppyLog.Accounts.User, user.id, authorize?: false).calendar_token
       assert is_binary(token)
-      assert has_element?(view, "#calendar-url[value='#{webcal_url(token)}']")
+      assert has_element?(view, "#calendar-url[value='#{https_url(token)}']")
+      assert has_element?(view, "#copy-calendar-url")
 
       assert has_element?(
                view,
@@ -161,14 +162,15 @@ defmodule PuppyLogWeb.SettingsLiveTest do
     test "rotating changes the address", %{conn: conn, user: user} do
       {:ok, user} = Accounts.rotate_calendar_token(user, actor: user)
       {:ok, view, _html} = live(conn, ~p"/settings")
-      assert has_element?(view, "#calendar-url[value='#{webcal_url(user.calendar_token)}']")
+      assert has_element?(view, "#calendar-url[value='#{https_url(user.calendar_token)}']")
 
       view |> element("#rotate-calendar-token") |> render_click()
 
       new_token = Ash.get!(PuppyLog.Accounts.User, user.id, authorize?: false).calendar_token
       assert new_token != user.calendar_token
-      assert has_element?(view, "#calendar-url[value='#{webcal_url(new_token)}']")
-      refute has_element?(view, "#calendar-url[value='#{webcal_url(user.calendar_token)}']")
+      assert has_element?(view, "#calendar-url[value='#{https_url(new_token)}']")
+      assert has_element?(view, "#open-calendar[href='#{webcal_url(new_token)}']")
+      refute has_element?(view, "#calendar-url[value='#{https_url(user.calendar_token)}']")
     end
 
     test "each member sees only their own address", %{conn: conn, user: user} do
@@ -182,16 +184,7 @@ defmodule PuppyLogWeb.SettingsLiveTest do
     end
   end
 
-  defp webcal_url(token) do
-    "webcal://" <>
-      (PuppyLogWeb.Endpoint.url() |> URI.parse() |> Map.fetch!(:host)) <>
-      port_suffix() <> "/calendar/#{token}.ics"
-  end
+  defp https_url(token), do: PuppyLogWeb.Endpoint.url() <> "/calendar/#{token}.ics"
 
-  defp port_suffix do
-    case URI.parse(PuppyLogWeb.Endpoint.url()).port do
-      port when port in [80, 443, nil] -> ""
-      port -> ":#{port}"
-    end
-  end
+  defp webcal_url(token), do: String.replace(https_url(token), ~r{^https?://}, "webcal://")
 end

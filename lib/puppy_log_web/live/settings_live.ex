@@ -155,19 +155,21 @@ defmodule PuppyLogWeb.SettingsLive do
       <.section_label class="pt-1">Kalender-Abo</.section_label>
       <.card>
         <%= if @calendar_url do %>
-          <div class="flex items-center gap-2">
+          <label for="calendar-url" class="text-[12.5px] text-muted">
+            Adresse für andere Kalender (Google, Android)
+          </label>
+          <div class="mt-1 flex items-center gap-2">
             <input
               id="calendar-url"
               type="text"
               readonly
-              value={@calendar_url}
-              aria-label="Kalender-Adresse"
+              value={@calendar_https_url}
               class="h-11 min-w-0 flex-1 rounded-xl border border-field bg-canvas px-3 font-mono text-[12.5px] outline-none focus:border-accent"
             />
             <button
               type="button"
               id="copy-calendar-url"
-              phx-click={JS.dispatch("puppy:copy", detail: %{text: @calendar_url})}
+              phx-click={JS.dispatch("puppy:copy", detail: %{text: @calendar_https_url})}
               class="grid size-11 shrink-0 place-items-center rounded-full text-accent transition active:bg-mist"
               aria-label="Kopieren"
             >
@@ -586,17 +588,15 @@ defmodule PuppyLogWeb.SettingsLive do
 
   # The subscription URL (webcal scheme: opens the calendar app directly).
   defp assign_calendar_url(socket) do
-    url =
-      case socket.assigns.current_user.calendar_token do
-        nil -> nil
-        token -> "webcal://" <> (url(~p"/calendar/#{token}") |> URI.parse() |> uri_rest())
-      end
+    case socket.assigns.current_user.calendar_token do
+      nil ->
+        assign(socket, calendar_url: nil, calendar_https_url: nil)
 
-    assign(socket, calendar_url: url)
-  end
-
-  defp uri_rest(%URI{host: host, port: port, path: path}) do
-    host <> if(port in [80, 443, nil], do: "", else: ":#{port}") <> path <> ".ics"
+      token ->
+        https_url = url(~p"/calendar/#{token}") <> ".ics"
+        webcal_url = String.replace(https_url, ~r{^https?://}, "webcal://")
+        assign(socket, calendar_url: webcal_url, calendar_https_url: https_url)
+    end
   end
 
   # Saving always upserts the single settings row with all three values.
