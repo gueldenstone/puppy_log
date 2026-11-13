@@ -173,6 +173,21 @@ defmodule PuppyLogWeb.SettingsLiveTest do
       refute has_element?(view, "#calendar-url[value='#{https_url(user.calendar_token)}']")
     end
 
+    test "the address uses the host the page was opened with", %{conn: conn, user: user} do
+      {:ok, user} = Accounts.rotate_calendar_token(user, actor: user)
+      {:ok, view, _html} = live(conn, "https://mbp.tail6676a.ts.net" <> ~p"/settings")
+
+      assert has_element?(
+               view,
+               "#calendar-url[value='https://mbp.tail6676a.ts.net/calendar/#{user.calendar_token}.ics']"
+             )
+
+      assert has_element?(
+               view,
+               "#open-calendar[href='webcal://mbp.tail6676a.ts.net/calendar/#{user.calendar_token}.ics']"
+             )
+    end
+
     test "each member sees only their own address", %{conn: conn, user: user} do
       riv = user_fixture(%{name: "Riv"})
       {:ok, riv} = Accounts.rotate_calendar_token(riv, actor: riv)
@@ -184,7 +199,9 @@ defmodule PuppyLogWeb.SettingsLiveTest do
     end
   end
 
-  defp https_url(token), do: PuppyLogWeb.Endpoint.url() <> "/calendar/#{token}.ics"
+  # LiveViewTest requests use http://www.example.com, unlike the endpoint
+  # config (http://localhost:4002), so this checks the request URI is used.
+  defp https_url(token), do: "http://www.example.com/calendar/#{token}.ics"
 
-  defp webcal_url(token), do: String.replace(https_url(token), ~r{^https?://}, "webcal://")
+  defp webcal_url(token), do: "webcal://www.example.com/calendar/#{token}.ics"
 end

@@ -100,10 +100,10 @@ Health entries send **no Web Push**. Reminders come from the calendar subscripti
   switch **„Alarme entfernen“ off** (otherwise iOS drops all reminders) and „Sichern“. Tapping
   „Im Kalender öffnen“ (`webcal://`) on the phone leads to the same dialog. Google Calendar and
   Android need the https address („Per URL hinzufügen“ on calendar.google.com).
-* The addresses are built from the endpoint's configured URL (`PuppyLogWeb.Endpoint.url/0`). In
-  dev that is `http://localhost:4000`, which a phone cannot reach, even when the page is opened
-  through Tailscale Serve; replace the host with `https://mbp.tail6676a.ts.net` by hand. A
-  subscribed calendar only refreshes while the phone is in the tailnet.
+* The addresses use the scheme and host the settings page was opened with. In dev, open
+  `/settings` on the phone through Tailscale Serve (`https://mbp.tail6676a.ts.net`) so the
+  copied address is reachable from the phone. A subscribed calendar only refreshes while the
+  phone is in the tailnet.
 
 ## Learn more
 

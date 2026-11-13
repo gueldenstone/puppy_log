@@ -30,10 +30,22 @@ defmodule PuppyLogWeb.SettingsLive do
        device: nil,
        sending: nil,
        last_result: nil,
-       delay_seconds: @delay_seconds
+       delay_seconds: @delay_seconds,
+       base_uri: nil
      )
      |> load()
-     |> assign_quiet_hours()
+     |> assign_quiet_hours()}
+  end
+
+  # The calendar address uses the scheme, host and port the page was opened
+  # with, so it works on localhost, through Tailscale Serve and in production.
+  @impl true
+  def handle_params(_params, uri, socket) do
+    %URI{scheme: scheme, host: host, port: port} = URI.parse(uri)
+
+    {:noreply,
+     socket
+     |> assign(base_uri: %URI{scheme: scheme, host: host, port: port})
      |> assign_calendar_url()}
   end
 
@@ -587,16 +599,17 @@ defmodule PuppyLogWeb.SettingsLive do
   end
 
   # The subscription URL (webcal scheme: opens the calendar app directly).
-  defp assign_calendar_url(socket) do
-    case socket.assigns.current_user.calendar_token do
-      nil ->
-        assign(socket, calendar_url: nil, calendar_https_url: nil)
+  defp assign_calendar_url(%{assigns: %{current_user: %{calendar_token: nil}}} = socket),
+    do: assign(socket, calendar_url: nil, calendar_https_url: nil)
 
-      token ->
-        https_url = url(~p"/calendar/#{token}") <> ".ics"
-        webcal_url = String.replace(https_url, ~r{^https?://}, "webcal://")
-        assign(socket, calendar_url: webcal_url, calendar_https_url: https_url)
-    end
+  defp assign_calendar_url(%{assigns: %{base_uri: base_uri, current_user: user}} = socket) do
+    https_url =
+      URI.to_string(%{base_uri | path: ~p"/calendar/#{user.calendar_token}" <> ".ics"})
+
+    # URI.to_string/1 omits the default port only for known schemes, so the
+    # webcal address is derived from the finished http(s) string.
+    webcal_url = String.replace(https_url, ~r{^https?://}, "webcal://")
+    assign(socket, calendar_url: webcal_url, calendar_https_url: https_url)
   end
 
   # Saving always upserts the single settings row with all three values.
