@@ -1,0 +1,6 @@
+#!/bin/sh
+set -eu
+
+cd -P -- "$(dirname -- "$0")"
+./puppy_log eval "PuppyLog.Release.migrate()"
+PHX_SERVER=true exec ./puppy_log start
