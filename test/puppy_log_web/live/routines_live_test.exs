@@ -122,6 +122,40 @@ defmodule PuppyLogWeb.RoutinesLiveTest do
              [["15"], ["30"], ["45"], ["60"]]
   end
 
+  test "asks for the kind when it was not chosen", %{conn: conn, user: user} do
+    {:ok, view, _html} = live(conn, ~p"/routines/new")
+
+    html =
+      view
+      |> form("#routine-form", form: %{name: "Pipi-Runde", starts_at: "10:00"})
+      |> render_submit()
+
+    assert html =~ "Bitte wählen, wodurch die Routine erledigt wird."
+    assert Daily.list_routines!(actor: user) == []
+  end
+
+  test "keeps a stored follow-up outside the usual choices", %{conn: conn, user: user} do
+    existing =
+      routine(user, %{
+        name: "Training",
+        kind: :training,
+        starts_at: ~T[09:00:00],
+        follow_up_minutes: 20
+      })
+
+    {:ok, view, _html} = live(conn, ~p"/routines/#{existing.id}")
+    assert has_element?(view, ~s{select[name="form[follow_up_minutes]"] option[selected]}, "20")
+
+    {:ok, _list, _html} =
+      view
+      |> form("#routine-form", form: %{name: "Training kurz"})
+      |> render_submit()
+      |> follow_redirect(conn, ~p"/routines")
+
+    assert {:ok, %{name: "Training kurz", follow_up_minutes: 20}} =
+             Daily.get_routine(existing.id, actor: user)
+  end
+
   test "archives a routine", %{conn: conn, user: user} do
     existing = routine(user, %{name: "Pipi-Runde", kind: :potty, starts_at: ~T[10:00:00]})
     {:ok, view, _html} = live(conn, ~p"/routines/#{existing.id}")

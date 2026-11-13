@@ -83,7 +83,7 @@ defmodule PuppyLogWeb.RoutineFormLive do
       assign(assigns,
         kind: field_string(assigns.form[:kind].value),
         weekdays: weekday_numbers(assigns.form[:weekdays].value),
-        follow_up_options: Enum.map(@follow_up_choices, &{"#{&1} Minuten", &1})
+        follow_up_options: follow_up_options(assigns.routine)
       )
 
     ~H"""
@@ -127,7 +127,13 @@ defmodule PuppyLogWeb.RoutineFormLive do
               <span class="text-[12px] leading-4 font-semibold">{label}</span>
             </label>
           </div>
-          <.field_errors :if={used_input?(@form[:kind])} errors={@form[:kind].errors} />
+          <.field_errors
+            :if={
+              @form[:kind].errors != [] and
+                (@form.source.submitted_once? or used_input?(@form[:kind]))
+            }
+            errors={["Bitte wählen, wodurch die Routine erledigt wird."]}
+          />
           <p class="px-0.5 text-[12.5px] leading-[17px] text-muted">
             {kind_hint(@kind)}
           </p>
@@ -285,7 +291,7 @@ defmodule PuppyLogWeb.RoutineFormLive do
       :for={message <- @errors}
       class="px-0.5 text-[12.5px] leading-[17px] font-semibold text-danger"
     >
-      {translate(message)}
+      {message}
     </p>
     """
   end
@@ -353,6 +359,17 @@ defmodule PuppyLogWeb.RoutineFormLive do
     end
   end
 
+  # A stored value outside the usual choices (seeds, API) stays selectable.
+  defp follow_up_options(routine) do
+    stored = routine && routine.follow_up_minutes
+
+    [stored | @follow_up_choices]
+    |> Enum.reject(&is_nil/1)
+    |> Enum.uniq()
+    |> Enum.sort()
+    |> Enum.map(&{"#{&1} Minuten", &1})
+  end
+
   defp members(socket) do
     actor = socket.assigns.current_user
     actor |> then(&Accounts.list_users!(actor: &1)) |> Enum.sort_by(&(&1.id != actor.id))
@@ -366,9 +383,6 @@ defmodule PuppyLogWeb.RoutineFormLive do
 
   defp kind_hint(_kind),
     do: "Trägt jemand ein passendes Ereignis ein, wird die Routine automatisch abgehakt."
-
-  defp translate(message) when is_binary(message), do: message
-  defp translate(error), do: PuppyLogWeb.CoreComponents.translate_error(error)
 
   defp field_string(nil), do: nil
   defp field_string(value), do: to_string(value)
