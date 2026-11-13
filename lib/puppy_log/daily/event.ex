@@ -148,6 +148,7 @@ defmodule PuppyLog.Daily.Event do
     update :record_link_mode do
       description "Internal: corrects how the event is linked after linking (see LinkRoutine)."
       accept [:link_mode]
+      require_atomic? false
     end
 
     destroy :destroy do
