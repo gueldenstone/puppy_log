@@ -2,7 +2,9 @@ defmodule PuppyLog.Puppy.Changes.DueOnFromAge do
   @moduledoc """
   Sets `due_on` from `due_age`/`due_age_unit` and the puppy's birth date.
 
-  Does nothing when no age is set. Without a birth date in the profile the
+  Does nothing when no age is set. On `:update` the date is only recomputed for
+  an open entry whose age or unit is actually changing, so unrelated edits and
+  done entries keep their date. Without a birth date in the profile the
   entry cannot be dated, which is reported on `:due_age`.
   """
 
@@ -16,8 +18,18 @@ defmodule PuppyLog.Puppy.Changes.DueOnFromAge do
     age = Ash.Changeset.get_attribute(changeset, :due_age)
     unit = Ash.Changeset.get_attribute(changeset, :due_age_unit)
 
-    if is_nil(age) or is_nil(unit), do: changeset, else: set_due_on(changeset, age, unit)
+    if is_nil(age) or is_nil(unit) or not recompute?(changeset),
+      do: changeset,
+      else: set_due_on(changeset, age, unit)
   end
+
+  defp recompute?(%{action: %{name: :update}} = changeset) do
+    changeset.data.status == :open and
+      (Ash.Changeset.changing_attribute?(changeset, :due_age) or
+         Ash.Changeset.changing_attribute?(changeset, :due_age_unit))
+  end
+
+  defp recompute?(_changeset), do: true
 
   defp set_due_on(changeset, age, unit) do
     case Puppy.get_profile(authorize?: false) do

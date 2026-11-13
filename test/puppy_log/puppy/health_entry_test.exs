@@ -247,6 +247,29 @@ defmodule PuppyLog.Puppy.HealthEntryTest do
       assert_receive %Phoenix.Socket.Broadcast{topic: "health_entries:changed"}
     end
 
+    test "editing an open age entry without a birth date keeps its date", %{lukas: lukas} do
+      {:ok, open} = Puppy.create_health_entry(age_attrs(), actor: lukas)
+      profile = Puppy.get_profile!(authorize?: false)
+      {:ok, _} = Puppy.update_profile(profile, %{birth_date: nil}, actor: lukas)
+
+      assert {:ok, entry} = Puppy.update_health_entry(open, %{title: "Neu"}, actor: lukas)
+      assert entry.title == "Neu"
+      assert entry.due_on == ~D[2026-12-02]
+    end
+
+    test "editing a done age entry after a birth date correction keeps its date", %{lukas: lukas} do
+      {:ok, done} =
+        Puppy.create_health_entry(age_attrs(%{status: :done, done_on: ~D[2026-11-12]}),
+          actor: lukas
+        )
+
+      profile = Puppy.get_profile!(authorize?: false)
+      {:ok, _} = Puppy.update_profile(profile, %{birth_date: ~D[2026-10-01]}, actor: lukas)
+
+      assert {:ok, entry} = Puppy.update_health_entry(done, %{title: "Neu"}, actor: lukas)
+      assert entry.due_on == ~D[2026-12-02]
+    end
+
     test "removing the birth date keeps the dates", %{lukas: lukas} do
       {:ok, open} = Puppy.create_health_entry(age_attrs(), actor: lukas)
       profile = Puppy.get_profile!(authorize?: false)
