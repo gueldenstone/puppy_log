@@ -106,4 +106,92 @@ defmodule PuppyLogWeb.SettingsLiveTest do
 
     assert has_element?(view, ~s{a[href="/routines?from=settings"]}, "Routinen verwalten")
   end
+
+  describe "health" do
+    test "saves the health lead time", %{conn: conn, user: user} do
+      {:ok, view, _html} = live(conn, ~p"/settings")
+      assert has_element?(view, "#health-days", "2 Tage vorher")
+
+      view |> element("#health-days-more") |> render_click()
+      assert has_element?(view, "#health-days", "3 Tage vorher")
+      assert Daily.settings(actor: user).health_reminder_days == 3
+
+      view |> element("#health-days-less") |> render_click()
+      view |> element("#health-days-less") |> render_click()
+      assert Daily.settings(actor: user).health_reminder_days == 1
+    end
+
+    test "keeps the quiet hours when saving the lead time", %{conn: conn, user: user} do
+      {:ok, _} = Daily.save_settings(%{quiet_hours_enabled: true}, actor: user)
+      {:ok, view, _html} = live(conn, ~p"/settings")
+      view |> element("#health-days-more") |> render_click()
+
+      settings = Daily.settings(actor: user)
+      assert settings.quiet_hours_enabled
+      assert settings.health_reminder_days == 3
+    end
+  end
+
+  describe "calendar subscription" do
+    test "creates a calendar address and shows the hint", %{conn: conn, user: user} do
+      {:ok, view, _html} = live(conn, ~p"/settings")
+      refute has_element?(view, "#calendar-url")
+
+      view |> element("#create-calendar-token") |> render_click()
+
+      token = Ash.get!(PuppyLog.Accounts.User, user.id, authorize?: false).calendar_token
+      assert is_binary(token)
+      assert has_element?(view, "#calendar-url[value='#{webcal_url(token)}']")
+
+      assert has_element?(
+               view,
+               "#open-calendar[href='#{webcal_url(token)}']",
+               "Im Kalender öffnen"
+             )
+
+      assert has_element?(view, "#calendar-hint", "Alarme entfernen")
+
+      assert has_element?(
+               view,
+               "#calendar-hint",
+               "Der Kalender enthält alle Termine des Haushalts."
+             )
+    end
+
+    test "rotating changes the address", %{conn: conn, user: user} do
+      {:ok, user} = Accounts.rotate_calendar_token(user, actor: user)
+      {:ok, view, _html} = live(conn, ~p"/settings")
+      assert has_element?(view, "#calendar-url[value='#{webcal_url(user.calendar_token)}']")
+
+      view |> element("#rotate-calendar-token") |> render_click()
+
+      new_token = Ash.get!(PuppyLog.Accounts.User, user.id, authorize?: false).calendar_token
+      assert new_token != user.calendar_token
+      assert has_element?(view, "#calendar-url[value='#{webcal_url(new_token)}']")
+      refute has_element?(view, "#calendar-url[value='#{webcal_url(user.calendar_token)}']")
+    end
+
+    test "each member sees only their own address", %{conn: conn, user: user} do
+      riv = user_fixture(%{name: "Riv"})
+      {:ok, riv} = Accounts.rotate_calendar_token(riv, actor: riv)
+      {:ok, user} = Accounts.rotate_calendar_token(user, actor: user)
+
+      {:ok, _view, html} = live(conn, ~p"/settings")
+      assert html =~ user.calendar_token
+      refute html =~ riv.calendar_token
+    end
+  end
+
+  defp webcal_url(token) do
+    "webcal://" <>
+      (PuppyLogWeb.Endpoint.url() |> URI.parse() |> Map.fetch!(:host)) <>
+      port_suffix() <> "/calendar/#{token}.ics"
+  end
+
+  defp port_suffix do
+    case URI.parse(PuppyLogWeb.Endpoint.url()).port do
+      port when port in [80, 443, nil] -> ""
+      port -> ":#{port}"
+    end
+  end
 end

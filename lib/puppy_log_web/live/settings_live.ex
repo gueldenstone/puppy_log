@@ -33,7 +33,8 @@ defmodule PuppyLogWeb.SettingsLive do
        delay_seconds: @delay_seconds
      )
      |> load()
-     |> assign_quiet_hours()}
+     |> assign_quiet_hours()
+     |> assign_calendar_url()}
   end
 
   @impl true
@@ -111,6 +112,95 @@ defmodule PuppyLogWeb.SettingsLive do
       <p class="px-1 text-[12.5px] leading-[17px] text-muted">
         In dieser Zeit gibt es keine Erinnerungen.
       </p>
+
+      <.section_label class="pt-1">Gesundheit</.section_label>
+      <.card>
+        <div class="flex min-h-12 items-center gap-3">
+          <div class="min-w-0 flex-1">
+            <p class="font-medium">Termine erinnern</p>
+            <p id="health-days" class="text-[12.5px] text-muted">
+              {@health_days} {if @health_days == 1, do: "Tag", else: "Tage"} vorher
+            </p>
+          </div>
+          <div
+            class="flex h-10 shrink-0 items-stretch overflow-hidden rounded-xl border border-field bg-card"
+            role="group"
+            aria-label="Tage vorher"
+          >
+            <button
+              :for={
+                {delta, sign, id, name, disabled} <- [
+                  {-1, "−", "health-days-less", "weniger", @health_days <= 0},
+                  {1, "+", "health-days-more", "mehr", @health_days >= 14}
+                ]
+              }
+              type="button"
+              id={id}
+              phx-click="step_health_days"
+              phx-value-delta={delta}
+              aria-label={name}
+              disabled={disabled}
+              class={[
+                "w-11 text-[22px] leading-none text-accent transition hover:bg-accent-tint active:bg-accent-tint",
+                "disabled:cursor-not-allowed disabled:text-muted/40 disabled:hover:bg-transparent",
+                delta > 0 && "border-l border-divider"
+              ]}
+            >
+              {sign}
+            </button>
+          </div>
+        </div>
+      </.card>
+
+      <.section_label class="pt-1">Kalender-Abo</.section_label>
+      <.card>
+        <%= if @calendar_url do %>
+          <div class="flex items-center gap-2">
+            <input
+              id="calendar-url"
+              type="text"
+              readonly
+              value={@calendar_url}
+              aria-label="Kalender-Adresse"
+              class="h-11 min-w-0 flex-1 rounded-xl border border-field bg-canvas px-3 font-mono text-[12.5px] outline-none focus:border-accent"
+            />
+            <button
+              type="button"
+              id="copy-calendar-url"
+              phx-click={JS.dispatch("puppy:copy", detail: %{text: @calendar_url})}
+              class="grid size-11 shrink-0 place-items-center rounded-full text-accent transition active:bg-mist"
+              aria-label="Kopieren"
+            >
+              <.pl_icon name="copy" class="size-5" />
+            </button>
+          </div>
+          <div class="mt-1 flex flex-wrap items-center justify-between gap-x-4">
+            <a
+              id="open-calendar"
+              href={@calendar_url}
+              class="flex min-h-11 items-center text-[14px] font-semibold text-accent"
+            >
+              Im Kalender öffnen
+            </a>
+            <button
+              type="button"
+              id="rotate-calendar-token"
+              phx-click="rotate_calendar_token"
+              data-confirm="Die alte Adresse funktioniert danach nicht mehr. Fortfahren?"
+              class="flex min-h-11 items-center text-[14px] font-medium text-muted underline-offset-4 hover:text-danger hover:underline"
+            >
+              Neue Adresse erzeugen
+            </button>
+          </div>
+        <% else %>
+          <.action_button type="button" id="create-calendar-token" phx-click="rotate_calendar_token">
+            Kalender-Adresse erzeugen
+          </.action_button>
+        <% end %>
+        <p id="calendar-hint" class="mt-2 text-[12.5px] leading-[17px] text-muted">
+          Auf dem iPhone: Einstellungen → Kalender → Accounts → Account hinzufügen → Andere → Kalenderabo hinzufügen, Adresse einfügen und „Alarme entfernen“ ausschalten – sonst kommen keine Erinnerungen. Der Kalender enthält alle Termine des Haushalts.
+        </p>
+      </.card>
 
       <.section_label class="pt-1">Dieses Gerät</.section_label>
       <section
@@ -387,6 +477,38 @@ defmodule PuppyLogWeb.SettingsLive do
     end
   end
 
+  def handle_event("step_health_days", %{"delta" => delta}, socket) when delta in ["-1", "1"] do
+    actor = socket.assigns.current_user
+    settings = Daily.settings(actor: actor)
+    days = (settings.health_reminder_days + String.to_integer(delta)) |> max(0) |> min(14)
+
+    # Saving upserts the single row, so the other values are passed along.
+    case Daily.save_settings(
+           %{
+             quiet_hours_enabled: settings.quiet_hours_enabled,
+             quiet_from: settings.quiet_from,
+             quiet_until: settings.quiet_until,
+             health_reminder_days: days
+           },
+           actor: actor
+         ) do
+      {:ok, _settings} -> {:noreply, assign_quiet_hours(socket)}
+      {:error, _error} -> {:noreply, put_flash(socket, :error, "Das hat leider nicht geklappt.")}
+    end
+  end
+
+  def handle_event("rotate_calendar_token", _params, socket) do
+    actor = socket.assigns.current_user
+
+    case Accounts.rotate_calendar_token(actor, actor: actor) do
+      {:ok, user} ->
+        {:noreply, socket |> assign(current_user: user) |> assign_calendar_url()}
+
+      {:error, _error} ->
+        {:noreply, put_flash(socket, :error, "Das hat leider nicht geklappt.")}
+    end
+  end
+
   def handle_event("send_test", %{"target" => target, "delay" => delay}, socket) do
     target = if target == "all", do: :all, else: :me
     delay = if delay == "0", do: 0, else: @delay_seconds
@@ -455,7 +577,26 @@ defmodule PuppyLogWeb.SettingsLive do
 
   defp assign_quiet_hours(socket) do
     settings = Daily.settings(actor: socket.assigns.current_user)
-    assign(socket, quiet_hours: quiet_hours_form(settings, socket))
+
+    assign(socket,
+      quiet_hours: quiet_hours_form(settings, socket),
+      health_days: settings.health_reminder_days
+    )
+  end
+
+  # The subscription URL (webcal scheme: opens the calendar app directly).
+  defp assign_calendar_url(socket) do
+    url =
+      case socket.assigns.current_user.calendar_token do
+        nil -> nil
+        token -> "webcal://" <> (url(~p"/calendar/#{token}") |> URI.parse() |> uri_rest())
+      end
+
+    assign(socket, calendar_url: url)
+  end
+
+  defp uri_rest(%URI{host: host, port: port, path: path}) do
+    host <> if(port in [80, 443, nil], do: "", else: ":#{port}") <> path <> ".ics"
   end
 
   # Saving always upserts the single settings row with all three values.
