@@ -26,7 +26,7 @@ defmodule PuppyLogWeb.RoutinesLiveTest do
     {:ok, view, _html} = live(conn, ~p"/routines")
     html = render_async(view)
 
-    assert has_element?(view, ~s{header a[href="/settings"]})
+    assert has_element?(view, ~s{header a[href="/history"]})
     assert html =~ "09:00 bis 11:00 · Mo–Fr"
     assert html =~ "13:00 · täglich"
     assert html =~ ~r/Training.*Mittagessen/s
@@ -198,6 +198,19 @@ defmodule PuppyLogWeb.RoutinesLiveTest do
   test "an unknown routine goes back to the list", %{conn: conn} do
     assert {:error, {:live_redirect, %{to: "/routines"}}} =
              live(conn, ~p"/routines/#{Ecto.UUID.generate()}")
+  end
+
+  test "goes back to the history, or to the settings when opened from there", %{conn: conn} do
+    {:ok, view, _html} = live(conn, ~p"/routines")
+    assert has_element?(view, ~s{header a[aria-label="Zurück"][href="/history"]})
+
+    {:ok, view, _html} = live(conn, ~p"/routines?from=settings")
+    assert has_element?(view, ~s{header a[aria-label="Zurück"][href="/settings"]})
+  end
+
+  test "time fields shrink to their column on small screens", %{conn: conn} do
+    {:ok, view, _html} = live(conn, ~p"/routines/new")
+    assert has_element?(view, ~s{input[type="time"].min-w-0.appearance-none})
   end
 
   test "summarises weekdays" do

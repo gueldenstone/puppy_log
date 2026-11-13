@@ -16,21 +16,24 @@ defmodule PuppyLogWeb.RoutinesLive do
   on_mount {PuppyLogWeb.LiveUserAuth, :live_user_required}
 
   @impl true
-  def mount(_params, _session, socket) do
+  def mount(params, _session, socket) do
     if connected?(socket) do
       PuppyLogWeb.Endpoint.subscribe("routines:changed")
       PuppyLogWeb.Endpoint.subscribe("users:changed")
       PuppyLogWeb.Endpoint.subscribe("puppy_profile:changed")
     end
 
-    {:ok, socket |> assign(page_title: "Routinen") |> assign_puppy_name()}
+    # Reached from „Verlauf“ (default) or from the settings.
+    back = if params["from"] == "settings", do: ~p"/settings", else: ~p"/history"
+
+    {:ok, socket |> assign(page_title: "Routinen", back: back) |> assign_puppy_name()}
   end
 
   @impl true
   def render(assigns) do
     ~H"""
     <Layouts.app flash={@flash} current_user={@current_user}>
-      <.top_bar title="Routinen" back={~p"/settings"} />
+      <.top_bar title="Routinen" back={@back} />
       <p class="-mt-1 px-1 text-[14px] leading-5 text-muted">
         Wiederkehrende Aufgaben für {@puppy_name}. Sie erscheinen auf „Heute“ und erinnern euch.
       </p>

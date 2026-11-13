@@ -198,7 +198,7 @@ defmodule PuppyLogWeb.SettingsLive do
       <.section_label class="pt-1">Mehr</.section_label>
       <.card flush>
         <.link
-          navigate={~p"/routines"}
+          navigate={~p"/routines?from=settings"}
           class="flex min-h-14 items-center gap-3 px-4 font-medium transition hover:bg-canvas active:bg-mist"
         >
           <.pl_icon name="repeat" class="size-5" />

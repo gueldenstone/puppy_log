@@ -288,7 +288,7 @@ defmodule PuppyLogWeb.CoreComponents do
   # All other inputs text, datetime-local, url, password, etc. are handled here...
   def input(assigns) do
     ~H"""
-    <div class="flex flex-col gap-1.5">
+    <div class="flex min-w-0 flex-col gap-1.5">
       <label :if={@label} for={@id} class={label_class()}>{@label}</label>
       <input
         type={@type}
@@ -297,6 +297,7 @@ defmodule PuppyLogWeb.CoreComponents do
         value={Phoenix.HTML.Form.normalize_value(@type, @value)}
         class={[
           @class || field_class(),
+          @type in ~w(date time datetime-local month week) && picker_class(),
           @errors != [] && (@error_class || error_field_class())
         ]}
         aria-invalid={@errors != [] && "true"}
@@ -324,6 +325,12 @@ defmodule PuppyLogWeb.CoreComponents do
   def field_class,
     do:
       "h-12 w-full rounded-xl border border-field bg-card px-3.5 text-base text-ink placeholder:text-muted/80 outline-none transition focus:border-accent focus:ring-4 focus:ring-accent/15"
+
+  # iOS Safari gives date and time inputs an intrinsic minimum width and centres
+  # their value, so they overflow narrow grid columns. Let them shrink instead.
+  @doc false
+  def picker_class,
+    do: "min-w-0 appearance-none text-left [&::-webkit-date-and-time-value]:text-left"
 
   @doc false
   def error_field_class, do: "border-2 border-danger focus:border-danger focus:ring-danger/15"

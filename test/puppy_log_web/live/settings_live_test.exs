@@ -104,6 +104,6 @@ defmodule PuppyLogWeb.SettingsLiveTest do
   test "links to the routines", %{conn: conn} do
     {:ok, view, _html} = live(conn, ~p"/settings")
 
-    assert has_element?(view, ~s{a[href="/routines"]}, "Routinen verwalten")
+    assert has_element?(view, ~s{a[href="/routines?from=settings"]}, "Routinen verwalten")
   end
 end

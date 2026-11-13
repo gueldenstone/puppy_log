@@ -59,6 +59,33 @@ defmodule PuppyLogWeb.HistoryLiveTest do
       assert has_element?(view, ~s{a[href="/history/2026-11-12"]}, "Heute ansehen")
     end
 
+    test "the routines card leads to the routine management", %{conn: conn, user: user} do
+      breakfast = routine(user, "Frühstück")
+      walk = routine(user, "Abendrunde")
+      occ(breakfast, ~D[2026-11-10], :done, 5)
+      occ(walk, ~D[2026-11-10], :done, 0)
+      {:ok, _} = Daily.archive_routine(walk, actor: user)
+
+      {:ok, view, _html} = live(conn, ~p"/history")
+
+      assert has_element?(view, ~s{#history-routines a[href="/routines"]}, "Bearbeiten")
+      # active routines open their editor, archived ones are plain rows
+      assert has_element?(
+               view,
+               ~s{#history-routines a[href="/routines/#{breakfast.id}"]},
+               "Frühstück"
+             )
+
+      refute has_element?(view, ~s{#history-routines a[href="/routines/#{walk.id}"]})
+      assert has_element?(view, "#history-routines", "Abendrunde")
+    end
+
+    test "without planned routines the card offers to set up the plan", %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/history")
+
+      assert has_element?(view, ~s{#history-routines a[href="/routines"]}, "Tagesablauf anlegen")
+    end
+
     test "deviation wording" do
       assert PuppyLogWeb.HistoryLive.deviation(12) == "Ø 12 Min zu spät"
       assert PuppyLogWeb.HistoryLive.deviation(-3) == "Ø 3 Min zu früh"
@@ -115,6 +142,17 @@ defmodule PuppyLogWeb.HistoryLiveTest do
       {:ok, _view, html} = live(conn, ~p"/history")
       refute html =~ "Vorher"
     end
+  end
+
+  test "before the arrival the plan can be prepared from here", %{conn: conn, user: user} do
+    {:ok, _} =
+      Puppy.create_profile(%{name: "Bruno", arrival_date: Date.add(Clock.today(), 10)},
+        actor: user
+      )
+
+    {:ok, view, _html} = live(conn, ~p"/history")
+
+    assert has_element?(view, ~s{a[href="/routines"]}, "Tagesablauf vorbereiten")
   end
 
   test "no arrival date shows the profile hint", %{conn: conn, user: user} do

@@ -8,7 +8,7 @@ defmodule PuppyLogWeb.HistoryLive do
 
   use PuppyLogWeb, :live_view
 
-  alias PuppyLog.{Clock, Puppy}
+  alias PuppyLog.{Daily, Clock, Puppy}
   alias PuppyLog.Daily.Stats
   alias PuppyLogWeb.HistoryCharts
 
@@ -51,7 +51,17 @@ defmodule PuppyLogWeb.HistoryLive do
 
     stats = if state == :ready, do: Stats.compute(socket.assigns.period, actor: actor)
 
-    assign(socket, today: today, state: state, stats: stats)
+    active_routine_ids =
+      if state == :ready,
+        do: actor |> then(&Daily.list_routines!(actor: &1)) |> MapSet.new(& &1.id),
+        else: MapSet.new()
+
+    assign(socket,
+      today: today,
+      state: state,
+      stats: stats,
+      active_routine_ids: active_routine_ids
+    )
   end
 
   @impl true
@@ -80,12 +90,17 @@ defmodule PuppyLogWeb.HistoryLive do
         <% {:before_arrival, date} -> %>
           <.empty_state icon="clock" title="Bald geht es los">
             Ab dem Einzug am {Format.long_date(date)} seht ihr hier euren Verlauf.
+            <:action>
+              <.action_button variant={:secondary} navigate={~p"/routines"}>
+                Tagesablauf vorbereiten
+              </.action_button>
+            </:action>
           </.empty_state>
         <% :ready -> %>
           <.period_chips periods={@periods} period={@period} />
           <.adherence_card stats={@stats} />
           <.potty_card stats={@stats} />
-          <.routines_card routines={@stats.routines} />
+          <.routines_card routines={@stats.routines} active_ids={@active_routine_ids} />
 
           <.action_button variant={:secondary} navigate={~p"/history/#{Date.to_iso8601(@today)}"}>
             Heute ansehen <.pl_icon name="right" class="size-5" />
@@ -187,37 +202,82 @@ defmodule PuppyLogWeb.HistoryLive do
   defp trend(_stats), do: :neutral
 
   attr :routines, :list, required: true
+  attr :active_ids, :any, required: true, doc: "MapSet of routine ids that can still be edited"
 
   defp routines_card(assigns) do
     ~H"""
-    <.card class="!pb-1.5">
-      <h2 class="mb-1 text-[13px] leading-[18px] font-medium text-muted">Routinen</h2>
-      <p :if={@routines == []} class="py-3 text-[14px] text-muted">
-        In diesem Zeitraum war keine Routine geplant.
-      </p>
-      <div
-        :for={routine <- @routines}
-        class="flex items-start gap-3 border-t border-divider py-2.5 first-of-type:border-t-0"
-      >
-        <div class="min-w-0 flex-1">
-          <p class="truncate text-[15px] leading-5 font-medium">{routine.name}</p>
-          <p class="text-[12.5px] leading-[17px] text-muted">
-            {[
-              "eingehalten #{routine.kept} von #{routine.counted}",
-              deviation(routine.avg_deviation)
-            ]
-            |> Enum.reject(&is_nil/1)
-            |> Enum.join(" · ")}
-          </p>
-          <p :if={misses(routine)} class="text-[12.5px] leading-[17px] font-semibold text-warn">
-            {misses(routine)}
-          </p>
-        </div>
-        <.chip :if={routine.rate} kind={rate_kind(routine.rate)} class="tabular-nums">
-          {routine.rate} %
-        </.chip>
+    <.card id="history-routines" class="!pb-1.5">
+      <div class="mb-1 flex items-center justify-between">
+        <h2 class="text-[13px] leading-[18px] font-medium text-muted">Routinen</h2>
+        <.link
+          navigate={~p"/routines"}
+          class="-my-2 flex min-h-11 items-center gap-1 text-[14px] font-semibold text-accent"
+        >
+          <.pl_icon name="edit" class="size-4" /> Bearbeiten
+        </.link>
       </div>
+      <div :if={@routines == []} class="flex flex-col items-start gap-1 py-2">
+        <p class="text-[14px] text-muted">In diesem Zeitraum war keine Routine geplant.</p>
+        <.link
+          navigate={~p"/routines"}
+          class="-ml-1 flex min-h-11 items-center px-1 text-[14px] font-semibold text-accent"
+        >
+          Tagesablauf anlegen
+        </.link>
+      </div>
+      <.routine_stat_row
+        :for={routine <- @routines}
+        routine={routine}
+        editable={MapSet.member?(@active_ids, routine.routine_id)}
+      />
     </.card>
+    """
+  end
+
+  attr :routine, :map, required: true
+  attr :editable, :boolean, required: true
+
+  defp routine_stat_row(%{editable: true} = assigns) do
+    ~H"""
+    <.link
+      navigate={~p"/routines/#{@routine.routine_id}"}
+      class="-mx-2 flex items-start gap-3 rounded-xl border-t border-divider px-2 py-2.5 transition first-of-type:border-t-0 hover:bg-canvas active:bg-mist"
+    >
+      <.routine_stat_body routine={@routine} />
+      <.pl_icon name="right" class="mt-0.5 size-4 shrink-0 text-muted/70" />
+    </.link>
+    """
+  end
+
+  defp routine_stat_row(assigns) do
+    ~H"""
+    <div class="flex items-start gap-3 border-t border-divider py-2.5 first-of-type:border-t-0">
+      <.routine_stat_body routine={@routine} />
+    </div>
+    """
+  end
+
+  attr :routine, :map, required: true
+
+  defp routine_stat_body(assigns) do
+    ~H"""
+    <div class="min-w-0 flex-1">
+      <p class="truncate text-[15px] leading-5 font-medium">{@routine.name}</p>
+      <p class="text-[12.5px] leading-[17px] text-muted">
+        {[
+          "eingehalten #{@routine.kept} von #{@routine.counted}",
+          deviation(@routine.avg_deviation)
+        ]
+        |> Enum.reject(&is_nil/1)
+        |> Enum.join(" · ")}
+      </p>
+      <p :if={misses(@routine)} class="text-[12.5px] leading-[17px] font-semibold text-warn">
+        {misses(@routine)}
+      </p>
+    </div>
+    <.chip :if={@routine.rate} kind={rate_kind(@routine.rate)} class="tabular-nums">
+      {@routine.rate} %
+    </.chip>
     """
   end
 
