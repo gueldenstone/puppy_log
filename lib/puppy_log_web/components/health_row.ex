@@ -26,12 +26,11 @@ defmodule PuppyLogWeb.HealthRow do
   @doc "German label of a health entry kind."
   def kind_label(kind), do: Map.fetch!(@kind_labels, kind)
 
-  # Plain paths: the entry form's routes come with the form page.
   @doc "Path of the form for a new entry."
-  def new_path, do: "/health/new"
+  def new_path, do: ~p"/health/new"
 
   @doc "Path of the form of an entry."
-  def entry_path(%{id: id}), do: "/health/#{id}"
+  def entry_path(%{id: id}), do: ~p"/health/#{id}"
 
   @doc ~S"""
   „in 3 Tagen“ for a number of days ahead.

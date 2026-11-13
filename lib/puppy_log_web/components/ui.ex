@@ -60,7 +60,15 @@ defmodule PuppyLogWeb.UI do
     "repeat" =>
       ~s(<path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/>),
     "sparkle" =>
-      ~s(<path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5L18 18M6 18l2.5-2.5M15.5 8.5L18 6"/>)
+      ~s(<path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5L18 18M6 18l2.5-2.5M15.5 8.5L18 6"/>),
+    "syringe" =>
+      ~s(<path d="M18 2l4 4M17 7l3-3M19 9l-8.7 8.7a2 2 0 0 1-2.8 0l-1.2-1.2a2 2 0 0 1 0-2.8L15 5M9 11l4 4M5 19l-3 3M14 4l6 6"/>),
+    "pill" =>
+      ~s(<path d="M10.5 20.5a5 5 0 0 1-7-7l10-10a5 5 0 0 1 7 7z"/><path d="M8.5 8.5l7 7"/>),
+    "tick" =>
+      ~s(<circle cx="12" cy="13" r="5"/><path d="M12 8V5M9 5l-2-2M15 5l2-2M7 13H3M21 13h-4M8 17l-3 3M16 17l3 3"/>),
+    "stethoscope" =>
+      ~s(<path d="M6 3v6a4 4 0 0 0 8 0V3"/><path d="M10 13v3a5 5 0 0 0 10 0v-2"/><circle cx="20" cy="12" r="2"/>)
   }
 
   @doc "Stroke icon from the design (2 px, rounded, 24 px grid)."

@@ -48,6 +48,8 @@ defmodule PuppyLogWeb.Router do
       live "/history/:date/log", DayLive, :log
       live "/history/:date/events/:id", DayLive, :edit_event
       live "/health", HealthLive, :index
+      live "/health/new", HealthFormLive, :new
+      live "/health/:id", HealthFormLive, :edit
       live "/health/:id/done", HealthLive, :complete
       live "/learn", PlaceholderLive, :learn
 
