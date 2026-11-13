@@ -31,7 +31,11 @@ defmodule PuppyLogWeb.Router do
       live "/", TodayLive, :index
       live "/routine/:id", TodayLive, :routine
       live "/log", TodayLive, :log
-      live "/history", PlaceholderLive, :history
+      live "/history", HistoryLive
+      live "/history/:date", DayLive, :index
+      live "/history/:date/routine/:id", DayLive, :routine
+      live "/history/:date/log", DayLive, :log
+      live "/history/:date/events/:id", DayLive, :edit_event
       live "/health", HealthLive
       live "/learn", PlaceholderLive, :learn
 

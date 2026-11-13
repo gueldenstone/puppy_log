@@ -1,18 +1,11 @@
 defmodule PuppyLogWeb.PlaceholderLive do
-  @moduledoc "Tabs that are not built yet: „Verlauf“ and „Lernen“."
+  @moduledoc "Tabs that are not built yet: „Lernen“."
 
   use PuppyLogWeb, :live_view
 
   on_mount {PuppyLogWeb.LiveUserAuth, :live_user_required}
 
   @pages %{
-    history: %{
-      title: "Verlauf",
-      subtitle: "Routinen, Stubenreinheit und Ereignisse",
-      icon: "chart",
-      text:
-        "Sobald ihr Routinen und Ereignisse eintragt, seht ihr hier die Auswertung pro Tag und Woche."
-    },
     learn: %{
       title: "Lernen",
       subtitle: "Sozialisierung und Kommandos",

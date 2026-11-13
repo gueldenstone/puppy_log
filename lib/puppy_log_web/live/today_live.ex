@@ -14,12 +14,11 @@ defmodule PuppyLogWeb.TodayLive do
   alias PuppyLog.{Accounts, Clock, Daily, Puppy}
   alias PuppyLog.Daily.Occurrence
   alias PuppyLog.Puppy.{Age, Weight}
-  alias PuppyLogWeb.{EventForm, RoutineSheet}
+  alias PuppyLogWeb.{EventForm, RoutineActions, RoutineSheet}
 
   on_mount {PuppyLogWeb.LiveUserAuth, :live_user_required}
 
   @collection "routines-today"
-  @load [:completed_by, :assignee]
   @tick_ms 60_000
 
   @quick [
@@ -51,7 +50,7 @@ defmodule PuppyLogWeb.TodayLive do
   end
 
   defp apply_action(socket, :routine, %{"id" => id}) do
-    case Daily.get_occurrence(id, actor: socket.assigns.current_user, load: @load) do
+    case Daily.get_occurrence(id, actor: socket.assigns.current_user, load: RoutineActions.load()) do
       {:ok, occurrence} ->
         assign(socket, sheet: occurrence)
 
@@ -257,31 +256,17 @@ defmodule PuppyLogWeb.TodayLive do
   end
 
   @impl true
-  def handle_event("complete", %{"id" => id}, socket) do
-    mutate(socket, id, &Daily.complete_occurrence(&1, %{done_at: Clock.utc_now()}, &2))
-  end
+  def handle_event(event, %{"id" => id}, socket) when event in ~w(complete skip reopen) do
+    # Shows the result right away; the PubSub broadcast refreshes the rest.
+    case RoutineActions.run(event, id, socket.assigns.current_user) do
+      {:ok, updated} ->
+        {:noreply,
+         socket
+         |> update_item(@collection, updated.id, fn _ -> updated end)
+         |> load()}
 
-  def handle_event("skip", %{"id" => id}, socket),
-    do: mutate(socket, id, &Daily.skip_occurrence/2)
-
-  def handle_event("reopen", %{"id" => id}, socket),
-    do: mutate(socket, id, &Daily.reopen_occurrence/2)
-
-  # Shows the result right away; the PubSub broadcast refreshes the rest.
-  defp mutate(socket, id, action) do
-    opts = [actor: socket.assigns.current_user]
-
-    with {:ok, occurrence} <- Daily.get_occurrence(id, opts),
-         {:ok, updated} <- action.(occurrence, opts) do
-      updated = Ash.load!(updated, @load, opts)
-
-      {:noreply,
-       socket
-       |> update_item(@collection, updated.id, fn _ -> updated end)
-       |> load()}
-    else
-      {:error, error} ->
-        {:noreply, put_flash(socket, :error, RoutineSheet.error_message(error))}
+      {:error, message} ->
+        {:noreply, put_flash(socket, :error, message)}
     end
   end
 
@@ -300,7 +285,7 @@ defmodule PuppyLogWeb.TodayLive do
   def handle_info(%Phoenix.Socket.Broadcast{}, socket), do: {:noreply, load(socket)}
 
   defp refresh_sheet(%{assigns: %{sheet: %Occurrence{id: id}}} = socket) do
-    case Daily.get_occurrence(id, actor: socket.assigns.current_user, load: @load) do
+    case Daily.get_occurrence(id, actor: socket.assigns.current_user, load: RoutineActions.load()) do
       {:ok, occurrence} -> assign(socket, sheet: occurrence)
       {:error, _} -> socket |> assign(sheet: nil) |> push_patch(to: ~p"/")
     end

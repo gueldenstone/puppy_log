@@ -246,8 +246,6 @@ defmodule PuppyLogWeb.EventFormTest do
       end
     end
 
-    # the host crashes on the patch (see below)
-    @tag :capture_log
     test "keeps an explicit link when only the note changes", %{conn: conn, user: user} do
       pin_local(~T[10:40:00])
       second = occurrence(user, "Mittags-Pipi")
@@ -258,16 +256,14 @@ defmodule PuppyLogWeb.EventFormTest do
           actor: user
         )
 
-      {:ok, view, _html} =
-        live_isolated(conn, Host, session: %{"event_id" => event.id, "user" => user})
+      {:ok, view, _html} = live(conn, ~p"/history/2026-11-12/events/#{event.id}")
 
       assert has_element?(view, "#event-form [role=dialog]", "Eintrag bearbeiten")
       assert has_element?(view, ~s{#event-form-routine input[value="#{second.id}"][checked]})
 
-      # the isolated host is not mounted at the router, so patching to
-      # `return_to` stops it after the save
-      Process.flag(:trap_exit, true)
-      catch_exit(view |> form("#event-form-form", %{note: "Lange gebraucht"}) |> render_submit())
+      view |> form("#event-form-form", %{note: "Lange gebraucht"}) |> render_submit()
+      assert_patch(view, ~p"/history/2026-11-12")
+      refute has_element?(view, "#event-form")
 
       assert [%{note: "Lange gebraucht"} = updated] = Daily.list_events_on!(@today, actor: user)
       assert local_time(updated.occurred_at) == local_time(event.occurred_at)

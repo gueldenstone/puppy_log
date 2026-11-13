@@ -20,6 +20,22 @@ defmodule PuppyLogWeb.Format do
     do: "#{date.day}. #{Enum.at(@months, date.month - 1)} #{date.year}"
 
   @doc ~S"""
+  A span of days; the year only when it differs.
+
+      iex> PuppyLogWeb.Format.date_range(~D[2026-11-06], ~D[2026-11-12])
+      "6. Nov bis 12. Nov"
+      iex> PuppyLogWeb.Format.date_range(~D[2025-11-13], ~D[2026-11-12])
+      "13. Nov 2025 bis 12. Nov 2026"
+  """
+  def date_range(%Date{year: year} = first, %Date{year: year} = last),
+    do: "#{day_month(first)} bis #{day_month(last)}"
+
+  def date_range(%Date{} = first, %Date{} = last),
+    do: "#{day_month(first)} #{first.year} bis #{day_month(last)} #{last.year}"
+
+  defp day_month(date), do: "#{date.day}. #{Enum.at(@months_short, date.month - 1)}"
+
+  @doc ~S"""
   Relative day for lists: "Heute", "Gestern", otherwise the short date.
 
       iex> PuppyLogWeb.Format.relative_day(~D[2026-11-11], ~D[2026-11-12])

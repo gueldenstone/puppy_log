@@ -17,10 +17,7 @@ defmodule PuppyLogWeb.TabsLiveTest do
     assert html =~ "+600 g seit Do, 1. Okt"
   end
 
-  test "Verlauf and Lernen are announced", %{conn: conn} do
-    {:ok, _view, html} = live(conn, ~p"/history")
-    assert html =~ "Verlauf"
-
+  test "Lernen is announced", %{conn: conn} do
     {:ok, _view, html} = live(conn, ~p"/learn")
     assert html =~ "Sozialisierung und Kommandos"
   end
