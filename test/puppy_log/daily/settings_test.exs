@@ -34,4 +34,13 @@ defmodule PuppyLog.Daily.SettingsTest do
   test "set_reminders requires an actor", %{riv: riv} do
     assert {:error, _} = Accounts.set_reminders(riv, %{receives_reminders: false})
   end
+
+  test "health lead time defaults to 2 and can be saved", %{lukas: lukas} do
+    assert Daily.settings(actor: lukas).health_reminder_days == 2
+
+    {:ok, _} = Daily.save_settings(%{health_reminder_days: 5}, actor: lukas)
+    assert Daily.settings(actor: lukas).health_reminder_days == 5
+
+    assert {:error, _} = Daily.save_settings(%{health_reminder_days: 15}, actor: lukas)
+  end
 end

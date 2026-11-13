@@ -19,7 +19,7 @@ defmodule PuppyLog.Daily.Settings do
     defaults [:read]
 
     create :save do
-      accept [:quiet_hours_enabled, :quiet_from, :quiet_until]
+      accept [:quiet_hours_enabled, :quiet_from, :quiet_until, :health_reminder_days]
       upsert? true
       upsert_identity :only_one
     end
@@ -65,6 +65,14 @@ defmodule PuppyLog.Daily.Settings do
       allow_nil? false
       public? true
       default ~T[06:30:00]
+    end
+
+    attribute :health_reminder_days, :integer do
+      description "Default lead time in days for health entry reminders"
+      allow_nil? false
+      public? true
+      default 2
+      constraints min: 0, max: 14
     end
 
     create_timestamp :inserted_at

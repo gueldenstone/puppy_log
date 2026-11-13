@@ -1,6 +1,6 @@
 defmodule PuppyLog.Puppy do
   @moduledoc """
-  The puppy itself: profile and weight history.
+  The puppy itself: profile, weight history and health entries.
   """
 
   use Ash.Domain, otp_app: :puppy_log, extensions: [AshAdmin.Domain]
@@ -44,6 +44,14 @@ defmodule PuppyLog.Puppy do
       define :add_weight, action: :create
       define :update_weight, action: :update
       define :delete_weight, action: :destroy
+    end
+
+    resource PuppyLog.Puppy.HealthEntry do
+      define :list_health_entries, action: :overview
+      define :get_health_entry, action: :read, get_by: [:id]
+      define :create_health_entry, action: :create
+      define :update_health_entry, action: :update
+      define :delete_health_entry, action: :destroy
     end
   end
 end
