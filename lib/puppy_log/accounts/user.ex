@@ -60,6 +60,26 @@ defmodule PuppyLog.Accounts.User do
       accept [:receives_reminders]
     end
 
+    update :rotate_calendar_token do
+      description "Generates a new secret calendar feed token; the old feed URL stops working."
+      accept []
+      # Non-atomic so that a foreign actor gets Forbidden instead of a stale-record error.
+      require_atomic? false
+      change set_attribute(:calendar_token, &__MODULE__.generate_calendar_token/0)
+    end
+
+    read :by_calendar_token do
+      description "Looks up the user owning a calendar feed token."
+      get? true
+
+      argument :token, :string do
+        allow_nil? false
+        sensitive? true
+      end
+
+      filter expr(calendar_token == ^arg(:token))
+    end
+
     read :get_by_subject do
       description "Get a user by the subject claim in a JWT"
       argument :subject, :string, allow_nil?: false
@@ -123,6 +143,11 @@ defmodule PuppyLog.Accounts.User do
     policy action(:set_reminders) do
       authorize_if actor_present()
     end
+
+    policy action(:rotate_calendar_token) do
+      forbid_unless actor_present()
+      authorize_if expr(id == ^actor(:id))
+    end
   end
 
   pub_sub do
@@ -151,9 +176,19 @@ defmodule PuppyLog.Accounts.User do
       default true
       public? true
     end
+
+    attribute :calendar_token, :string do
+      description "Secret token in this member's calendar feed URL; nil until generated"
+      sensitive? true
+    end
   end
+
+  @doc "A fresh calendar feed token: 32 random bytes, URL-safe Base64 without padding."
+  def generate_calendar_token,
+    do: Base.url_encode64(:crypto.strong_rand_bytes(32), padding: false)
 
   identities do
     identity :unique_email, [:email]
+    identity :unique_calendar_token, [:calendar_token]
   end
 end

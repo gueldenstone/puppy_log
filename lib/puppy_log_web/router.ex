@@ -23,6 +23,17 @@ defmodule PuppyLogWeb.Router do
     plug :set_actor, :user
   end
 
+  # Calendar apps fetch the feed without cookies; the token in the URL is the auth.
+  pipeline :calendar_feed do
+    plug :put_secure_browser_headers
+  end
+
+  scope "/", PuppyLogWeb do
+    pipe_through :calendar_feed
+
+    get "/calendar/:token", CalendarController, :show
+  end
+
   scope "/", PuppyLogWeb do
     pipe_through :browser
 
