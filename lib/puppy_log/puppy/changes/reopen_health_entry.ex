@@ -11,21 +11,35 @@ defmodule PuppyLog.Puppy.Changes.ReopenHealthEntry do
 
   @impl true
   def change(changeset, _opts, _context) do
-    changeset
-    |> Ash.Changeset.force_change_attributes(%{status: :open, done_on: nil, batch: nil})
-    |> Ash.Changeset.after_action(&remove_untouched_successor/2)
+    if changeset.data.status == :done do
+      changeset
+      |> Ash.Changeset.force_change_attributes(%{status: :open, done_on: nil, batch: nil})
+      |> Ash.Changeset.after_action(&remove_untouched_successor/2)
+    else
+      Ash.Changeset.add_error(changeset, field: :status, message: "Ist noch offen")
+    end
   end
 
   defp remove_untouched_successor(changeset, entry) do
-    resource = entry.__struct__
     opts = [actor: changeset.context.private[:actor], authorize?: false]
 
-    resource
-    |> Ash.Query.filter(previous_id == ^entry.id and status == :open)
-    |> Ash.read!(opts)
-    |> Enum.filter(&(DateTime.compare(&1.updated_at, &1.inserted_at) == :eq))
-    |> Enum.each(&Ash.destroy!(&1, opts))
+    with {:ok, successors} <-
+           entry.__struct__
+           |> Ash.Query.filter(previous_id == ^entry.id and status == :open)
+           |> Ash.read(opts),
+         :ok <- destroy_untouched(successors, opts) do
+      {:ok, entry}
+    end
+  end
 
-    {:ok, entry}
+  defp destroy_untouched(successors, opts) do
+    successors
+    |> Enum.filter(&(DateTime.compare(&1.updated_at, &1.inserted_at) == :eq))
+    |> Enum.reduce_while(:ok, fn successor, :ok ->
+      case Ash.destroy(successor, opts) do
+        :ok -> {:cont, :ok}
+        {:error, _} = error -> {:halt, error}
+      end
+    end)
   end
 end

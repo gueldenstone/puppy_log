@@ -22,7 +22,7 @@ defmodule PuppyLog.Puppy.HealthCompletionTest do
       |> Ash.Query.filter(previous_id == ^entry.id)
       |> Ash.read!(actor: actor)
 
-  test "complete stores date, batch and who", %{lukas: lukas} do
+  test "complete stores date and batch and keeps the creator", %{lukas: lukas} do
     entry = create(lukas)
 
     {:ok, done} =
@@ -30,6 +30,34 @@ defmodule PuppyLog.Puppy.HealthCompletionTest do
 
     assert %{status: :done, done_on: ~D[2026-11-12], batch: "A123"} = done
     assert done.created_by_id == lukas.id
+  end
+
+  test "complete without batch keeps the stored batch", %{lukas: lukas} do
+    entry = create(lukas, %{batch: "A1"})
+    {:ok, done} = Puppy.complete_health_entry(entry, %{}, actor: lukas)
+    assert done.batch == "A1"
+  end
+
+  test "complete rejects a batch on a non-vaccination", %{lukas: lukas} do
+    entry = create(lukas, %{kind: :deworming})
+
+    assert {:error, error} = Puppy.complete_health_entry(entry, %{batch: "X"}, actor: lukas)
+    assert Enum.any?(error.errors, &(&1.field == :batch and &1.message =~ "Nur für Impfungen"))
+  end
+
+  test "reopen of an open entry fails", %{lukas: lukas} do
+    assert {:error, error} = Puppy.reopen_health_entry(create(lukas), actor: lukas)
+    assert Exception.message(error) =~ "Ist noch offen"
+  end
+
+  test "create rejects done_on without status done", %{lukas: lukas} do
+    assert {:error, error} =
+             Puppy.create_health_entry(
+               %{kind: :other_care, title: "X", due_on: ~D[2026-11-10], done_on: ~D[2026-11-01]},
+               actor: lukas
+             )
+
+    assert Enum.any?(error.errors, &(&1.field == :done_on))
   end
 
   test "complete defaults the date to today", %{lukas: lukas} do
@@ -108,7 +136,6 @@ defmodule PuppyLog.Puppy.HealthCompletionTest do
     edited = create(lukas, %{title: "A", repeat_weeks: 4})
     {:ok, done} = Puppy.complete_health_entry(edited, %{}, actor: lukas)
     [next] = successors(edited, lukas)
-    Process.sleep(5)
     {:ok, _} = Puppy.update_health_entry(next, %{title: "A2"}, actor: lukas)
     {:ok, _} = Puppy.reopen_health_entry(done, actor: lukas)
     assert [_kept] = successors(edited, lukas)
@@ -124,8 +151,13 @@ defmodule PuppyLog.Puppy.HealthCompletionTest do
   test "future done_on is rejected", %{lukas: lukas} do
     entry = create(lukas)
 
-    assert {:error, _} =
+    assert {:error, error} =
              Puppy.complete_health_entry(entry, %{done_on: ~D[2026-11-14]}, actor: lukas)
+
+    assert Enum.any?(
+             error.errors,
+             &(&1.field == :done_on and &1.message =~ "Darf nicht in der Zukunft liegen")
+           )
 
     assert {:error, _} =
              Puppy.create_health_entry(

@@ -37,13 +37,21 @@ defmodule PuppyLog.Puppy.Changes.CompleteHealthEntry do
     changeset
     |> Ash.Changeset.filter(Ash.Expr.expr(status == :open))
     |> Ash.Changeset.after_transaction(&already_done/2)
-    |> Ash.Changeset.force_change_attributes(%{
-      status: :done,
-      done_on: done_on,
-      batch: Ash.Changeset.get_argument(changeset, :batch)
-    })
+    |> Ash.Changeset.force_change_attributes(%{status: :done, done_on: done_on})
+    |> keep_or_set_batch()
     |> not_in_future(done_on)
     |> Ash.Changeset.after_action(&create_successor/2)
+  end
+
+  # Only overwrite the stored batch when one was given.
+  defp keep_or_set_batch(changeset) do
+    case Ash.Changeset.fetch_argument(changeset, :batch) do
+      {:ok, batch} when not is_nil(batch) ->
+        Ash.Changeset.force_change_attribute(changeset, :batch, batch)
+
+      _ ->
+        changeset
+    end
   end
 
   defp entered_as_done(changeset) do
@@ -55,9 +63,14 @@ defmodule PuppyLog.Puppy.Changes.CompleteHealthEntry do
       |> not_in_future(done_on)
       |> Ash.Changeset.after_action(&create_successor/2)
     else
-      changeset
+      reject_done_on(changeset, Ash.Changeset.get_attribute(changeset, :done_on))
     end
   end
+
+  defp reject_done_on(changeset, nil), do: changeset
+
+  defp reject_done_on(changeset, _done_on),
+    do: Ash.Changeset.add_error(changeset, field: :done_on, message: "Nur für erledigte Einträge")
 
   defp not_in_future(changeset, done_on) do
     if Date.after?(done_on, Clock.today()) do
