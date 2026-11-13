@@ -16,7 +16,7 @@ defmodule PuppyLogWeb.HealthFormLive do
 
   alias AshPhoenix.Form
   alias PuppyLog.{Accounts, Clock, Daily, Puppy}
-  alias PuppyLog.Puppy.HealthEntry
+  alias PuppyLog.Puppy.{DueAge, HealthEntry}
 
   on_mount {PuppyLogWeb.LiveUserAuth, :live_user_required}
 
@@ -34,11 +34,19 @@ defmodule PuppyLogWeb.HealthFormLive do
     "remind_days_before" => {:remind_days_before, 0, 14},
     "repeat_weeks" => {:repeat_weeks, 1, 104}
   }
+  @unit_options [weeks: "Wochen", months: "Monate"]
   @gone "Diesen Eintrag gibt es nicht mehr."
 
   @impl true
   def mount(params, _session, socket) do
-    socket = assign(socket, kind_tiles: @kind_tiles, members: members(socket))
+    socket =
+      assign(socket,
+        kind_tiles: @kind_tiles,
+        members: members(socket),
+        birth_date: birth_date(socket),
+        unit_options: @unit_options
+      )
+
     {:ok, init(socket, socket.assigns.live_action, params)}
   end
 
@@ -57,7 +65,8 @@ defmodule PuppyLogWeb.HealthFormLive do
       entry: nil,
       form: to_form(form),
       repeat?: false,
-      done?: false
+      done?: false,
+      due_mode: "date"
     )
   end
 
@@ -71,7 +80,8 @@ defmodule PuppyLogWeb.HealthFormLive do
           entry: entry,
           form: to_form(form),
           repeat?: entry.repeat_weeks != nil,
-          done?: false
+          done?: false,
+          due_mode: if(entry.due_age, do: "age", else: "date")
         )
 
       {:error, _missing} ->
@@ -92,6 +102,8 @@ defmodule PuppyLogWeb.HealthFormLive do
         care?: kind in @care_kinds,
         today: Clock.today()
       )
+
+    assigns = assign(assigns, age?: !assigns.vet? and assigns.due_mode == "age")
 
     ~H"""
     <Layouts.app flash={@flash} current_user={@current_user}>
@@ -144,8 +156,94 @@ defmodule PuppyLogWeb.HealthFormLive do
           placeholder={title_placeholder(@kind)}
         />
 
+        <section :if={!@vet?} class="flex flex-col gap-2">
+          <.section_label>Fällig</.section_label>
+          <div
+            class="grid grid-cols-2 gap-1 rounded-[14px] bg-field p-1"
+            role="radiogroup"
+            aria-label="Fällig"
+          >
+            <label
+              :for={{mode, label} <- [{"date", "Datum"}, {"age", "Alter"}]}
+              class={[
+                "flex h-10 items-center justify-center rounded-[10px] text-[14px] font-semibold transition",
+                "has-focus-visible:ring-4 has-focus-visible:ring-accent/25",
+                if(mode == "age" and is_nil(@birth_date),
+                  do: "cursor-not-allowed text-muted/50",
+                  else: "cursor-pointer active:scale-95"
+                ),
+                segment_class(@due_mode == mode)
+              ]}
+            >
+              <input
+                type="radio"
+                name="due_mode"
+                value={mode}
+                checked={@due_mode == mode}
+                disabled={mode == "age" and is_nil(@birth_date)}
+                class="sr-only"
+              />
+              {label}
+            </label>
+          </div>
+          <p :if={is_nil(@birth_date)} class="px-0.5 text-[12.5px] leading-[17px] text-muted">
+            <.link navigate={~p"/profile/edit"} class="font-semibold text-accent underline">
+              Geburtsdatum im Profil eintragen
+            </.link>
+            , dann geht auch das Alter.
+          </p>
+        </section>
+
+        <div :if={@age?} id="health-due-age" class="flex flex-col gap-2">
+          <div class="grid grid-cols-[7rem_1fr] items-start gap-2">
+            <.input
+              field={@form[:due_age]}
+              type="number"
+              inputmode="numeric"
+              label="Alter"
+              min="1"
+              max={DueAge.ranges() |> Map.fetch!(unit_atom(@form[:due_age_unit].value)) |> Enum.max()}
+            />
+            <fieldset class="flex flex-col gap-1">
+              <legend class="mb-1 text-sm font-semibold">Einheit</legend>
+              <div
+                class="grid grid-cols-2 gap-1 rounded-[14px] bg-field p-1"
+                role="radiogroup"
+                aria-label="Einheit"
+              >
+                <label
+                  :for={{unit, label} <- @unit_options}
+                  class={[
+                    "flex h-10 cursor-pointer items-center justify-center rounded-[10px] text-[14px] font-semibold transition active:scale-95",
+                    "has-focus-visible:ring-4 has-focus-visible:ring-accent/25",
+                    segment_class(unit_atom(@form[:due_age_unit].value) == unit)
+                  ]}
+                >
+                  <input
+                    type="radio"
+                    name={@form[:due_age_unit].name}
+                    value={unit}
+                    checked={unit_atom(@form[:due_age_unit].value) == unit}
+                    class="sr-only"
+                  />
+                  {label}
+                </label>
+              </div>
+            </fieldset>
+          </div>
+          <p
+            :if={preview = age_preview(@form, @birth_date)}
+            id="health-due-age-preview"
+            class="px-0.5 text-[13px] font-semibold text-accent-dark"
+            aria-live="polite"
+          >
+            → {Format.short_date(preview)}
+          </p>
+        </div>
+
         <div class={["grid gap-2", @vet? && "grid-cols-2"]}>
           <.input
+            :if={!@age?}
             field={@form[:due_on]}
             type="date"
             label={if @care?, do: "Fällig am", else: "Datum"}
@@ -357,6 +455,7 @@ defmodule PuppyLogWeb.HealthFormLive do
 
   defp assign_choices(socket, params) do
     assign(socket,
+      due_mode: params["due_mode"] || socket.assigns.due_mode,
       repeat?: params["repeat"] == "true",
       done?: socket.assigns.live_action == :new and params["done"] == "true"
     )
@@ -369,12 +468,22 @@ defmodule PuppyLogWeb.HealthFormLive do
     params
     |> keep_only(kind == "vet_visit", ~w(due_time location assignee_id))
     |> keep_only(kind == "vaccination", ~w(batch))
+    |> due(kind != "vet_visit" and assigns.due_mode == "age")
     |> repeat_weeks(kind in @care_kinds and assigns.repeat?)
     |> done(assigns)
   end
 
   defp keep_only(params, true, _fields), do: params
   defp keep_only(params, false, fields), do: Map.merge(params, Map.new(fields, &{&1, nil}))
+
+  # In age mode the server computes the date from the age.
+  defp due(params, true) do
+    params
+    |> Map.delete("due_on")
+    |> Map.update("due_age_unit", "weeks", &if(&1 in [nil, ""], do: "weeks", else: &1))
+  end
+
+  defp due(params, false), do: Map.merge(params, %{"due_age" => nil, "due_age_unit" => nil})
 
   defp repeat_weeks(params, false), do: Map.put(params, "repeat_weeks", nil)
 
@@ -401,6 +510,30 @@ defmodule PuppyLogWeb.HealthFormLive do
   defp members(socket) do
     actor = socket.assigns.current_user
     actor |> then(&Accounts.list_users!(actor: &1)) |> Enum.sort_by(&(&1.id != actor.id))
+  end
+
+  defp segment_class(true), do: "bg-card text-accent shadow-sm"
+  defp segment_class(false), do: "text-ink/70"
+
+  defp unit_atom("months"), do: :months
+  defp unit_atom(:months), do: :months
+  defp unit_atom(_unit), do: :weeks
+
+  defp birth_date(socket) do
+    case Puppy.get_profile(actor: socket.assigns.current_user) do
+      {:ok, %{birth_date: %Date{} = date}} -> date
+      _none -> nil
+    end
+  end
+
+  # The date an entered age leads to, nil while the age is missing or out of range.
+  defp age_preview(_form, nil), do: nil
+
+  defp age_preview(form, birth_date) do
+    unit = unit_atom(form[:due_age_unit].value)
+    age = int_value(form[:due_age].value)
+
+    if age in Map.fetch!(DueAge.ranges(), unit), do: DueAge.due_on(birth_date, age, unit)
   end
 
   defp tile_class(true), do: "border-accent bg-accent-tint text-accent"

@@ -245,4 +245,83 @@ defmodule PuppyLogWeb.HealthFormLiveTest do
     assert has_element?(view, "#health-sheet", "Entwurmung")
     assert has_element?(view, "#health-complete-form")
   end
+
+  describe "due at an age" do
+    setup %{user: user} do
+      {:ok, _} = Puppy.create_profile(%{name: "Momo", birth_date: ~D[2026-10-07]}, actor: user)
+      :ok
+    end
+
+    defp choose_mode(view, mode) do
+      view |> form("#health-form", due_mode: mode) |> render_change()
+    end
+
+    test "care kinds offer Datum or Alter", %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/health/new")
+
+      assert has_element?(view, ~s{[role="radiogroup"][aria-label="Fällig"] label}, "Datum")
+      assert has_element?(view, ~s{[role="radiogroup"][aria-label="Fällig"] label}, "Alter")
+
+      choose_kind(view, "vet_visit")
+      refute has_element?(view, ~s{[role="radiogroup"][aria-label="Fällig"]})
+    end
+
+    test "entering an age shows the computed date and saves it", %{conn: conn, user: user} do
+      {:ok, view, _html} = live(conn, ~p"/health/new")
+      choose_kind(view, "vaccination")
+      choose_mode(view, "age")
+
+      view
+      |> form("#health-form", form: %{due_age: "8", due_age_unit: "weeks"})
+      |> render_change()
+
+      assert has_element?(view, "#health-due-age-preview", "→ Mi, 2. Dez")
+
+      save(view, conn, form: %{title: "ZZ Impfung"})
+
+      assert [%{due_age: 8, due_age_unit: :weeks, due_on: ~D[2026-12-02]}] =
+               Puppy.list_health_entries!(actor: user)
+    end
+
+    test "editing an age entry starts on Alter; switching to Datum keeps the typed date",
+         %{conn: conn, user: user} do
+      saved =
+        entry(user, %{kind: :vaccination, due_on: nil, due_age: 8, due_age_unit: :weeks})
+
+      {:ok, view, _html} = live(conn, ~p"/health/#{saved.id}")
+
+      assert has_element?(view, ~s{input[name="due_mode"][value="age"][checked]})
+      assert has_element?(view, ~s{input[name="form[due_age]"][value="8"]})
+      assert has_element?(view, ~s{input[name="form[due_age_unit]"][value="weeks"][checked]})
+
+      choose_mode(view, "date")
+      save(view, conn, form: %{due_on: "2026-12-05"})
+
+      assert %{due_age: nil, due_age_unit: nil, due_on: ~D[2026-12-05]} =
+               Puppy.get_health_entry!(saved.id, actor: user)
+    end
+
+    test "switching kind to Tierarzt clears the age", %{conn: conn, user: user} do
+      {:ok, view, _html} = live(conn, ~p"/health/new")
+      choose_mode(view, "age")
+
+      view
+      |> form("#health-form", form: %{due_age: "8", due_age_unit: "weeks"})
+      |> render_change()
+
+      choose_kind(view, "vet_visit")
+      save(view, conn, form: %{title: "Kontrolle", due_on: "2026-12-01", due_time: "09:00"})
+
+      assert [%{kind: :vet_visit, due_age: nil, due_age_unit: nil, due_on: ~D[2026-12-01]}] =
+               Puppy.list_health_entries!(actor: user)
+    end
+  end
+
+  test "without a birth date Alter is disabled with a profile link", %{conn: conn, user: user} do
+    {:ok, _} = Puppy.create_profile(%{name: "Momo"}, actor: user)
+    {:ok, view, _html} = live(conn, ~p"/health/new")
+
+    assert has_element?(view, ~s{input[name="due_mode"][value="age"][disabled]})
+    assert has_element?(view, ~s{a[href="/profile/edit"]}, "Geburtsdatum im Profil eintragen")
+  end
 end

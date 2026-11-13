@@ -181,4 +181,21 @@ defmodule PuppyLogWeb.HealthLiveTest do
     assert has_element?(view, "#health-next", "Wurmkur")
     assert has_element?(view, "#health-next", "in 3 Tagen")
   end
+
+  test "rows and the next card show the age", %{conn: conn, user: user} do
+    {:ok, _} = Puppy.create_profile(%{name: "Momo", birth_date: ~D[2026-10-07]}, actor: user)
+
+    entry(user, %{
+      kind: :vaccination,
+      title: "Impfung",
+      due_on: nil,
+      due_age: 8,
+      due_age_unit: :weeks
+    })
+
+    {:ok, view, _html} = live(conn, ~p"/health")
+
+    assert has_element?(view, "#health-next", "mit 8 Wochen")
+    assert render_async(view) =~ "mit 8 Wochen"
+  end
 end

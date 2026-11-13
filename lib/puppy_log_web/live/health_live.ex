@@ -248,7 +248,7 @@ defmodule PuppyLogWeb.HealthLive do
   defp details(entry) do
     time = entry.due_time && Calendar.strftime(entry.due_time, "%H:%M")
 
-    [Format.short_date(entry.due_on), time, entry.location]
+    [Format.short_date(entry.due_on), PuppyLogWeb.HealthRow.age(entry), time, entry.location]
     |> Enum.reject(&is_nil/1)
     |> Enum.join(" · ")
   end

@@ -10,7 +10,7 @@ defmodule PuppyLogWeb.HealthRow do
 
   use PuppyLogWeb, :html
 
-  alias PuppyLog.Puppy.HealthStatus
+  alias PuppyLog.Puppy.{DueAge, HealthStatus}
 
   # chips further out than this show the date instead of a day count
   @max_count_days 30
@@ -123,7 +123,7 @@ defmodule PuppyLogWeb.HealthRow do
   end
 
   defp subtitle(entry, today) do
-    join([when_line(entry, today), repetition(entry.repeat_weeks), entry.location])
+    join([when_line(entry, today), age(entry), repetition(entry.repeat_weeks), entry.location])
   end
 
   defp when_line(%{previous: %{status: :done, done_on: %Date{} = done_on}}, today),
@@ -133,6 +133,12 @@ defmodule PuppyLogWeb.HealthRow do
     do: "#{Format.day_month_numeric(entry.due_on, today)}, #{Calendar.strftime(time, "%H:%M")}"
 
   defp when_line(entry, today), do: Format.day_month_numeric(entry.due_on, today)
+
+  @doc false
+  def age(%{due_age: age, due_age_unit: unit}) when is_integer(age) and not is_nil(unit),
+    do: DueAge.label(age, unit)
+
+  def age(_entry), do: nil
 
   defp repetition(nil), do: nil
   defp repetition(1), do: "jede Woche"
