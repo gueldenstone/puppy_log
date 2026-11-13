@@ -302,9 +302,9 @@ defmodule PuppyLogWeb.UI do
 
   @tabs [
     {:today, "Heute", "home", "/"},
-    {:history, "Verlauf", "chart", "/verlauf"},
-    {:health, "Gesundheit", "heart", "/gesundheit"},
-    {:learn, "Lernen", "book", "/lernen"}
+    {:history, "Verlauf", "chart", "/history"},
+    {:health, "Gesundheit", "heart", "/health"},
+    {:learn, "Lernen", "book", "/learn"}
   ]
 
   attr :active, :atom, default: nil

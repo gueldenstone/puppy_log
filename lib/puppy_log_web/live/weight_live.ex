@@ -58,7 +58,7 @@ defmodule PuppyLogWeb.WeightLive do
       {:error, _} ->
         socket
         |> put_flash(:error, "Diesen Eintrag gibt es nicht mehr.")
-        |> push_patch(to: ~p"/gewicht")
+        |> push_patch(to: ~p"/weight")
     end
   end
 
@@ -66,7 +66,7 @@ defmodule PuppyLogWeb.WeightLive do
   def render(assigns) do
     ~H"""
     <Layouts.app flash={@flash} current_user={@current_user}>
-      <.top_bar title="Gewicht" back={~p"/gesundheit"} />
+      <.top_bar title="Gewicht" back={~p"/health"} />
 
       <.card>
         <div :if={@summary.latest} class="flex flex-wrap items-baseline gap-x-2">
@@ -105,7 +105,7 @@ defmodule PuppyLogWeb.WeightLive do
         <:item :let={entry}>
           <.swipe_row id={"weight-#{entry.id}"}>
             <.link
-              patch={~p"/gewicht/#{entry.id}"}
+              patch={~p"/weight/#{entry.id}"}
               class="flex min-h-14 items-center gap-3 px-4 py-2"
               aria-label={"#{Format.short_date(entry.measured_on)}, #{Weight.to_kg_string(entry.weight_grams)} kg, ändern"}
             >
@@ -126,7 +126,7 @@ defmodule PuppyLogWeb.WeightLive do
               <.swipe_action
                 icon="edit"
                 type="button"
-                phx-click={JS.patch(~p"/gewicht/#{entry.id}")}
+                phx-click={JS.patch(~p"/weight/#{entry.id}")}
               >
                 Ändern
               </.swipe_action>
@@ -159,7 +159,7 @@ defmodule PuppyLogWeb.WeightLive do
       </p>
 
       <:footer>
-        <.action_button patch={~p"/gewicht/neu"}>
+        <.action_button patch={~p"/weight/new"}>
           <.pl_icon name="plus" class="size-5" /> Wiegen eintragen
         </.action_button>
       </:footer>
@@ -169,7 +169,7 @@ defmodule PuppyLogWeb.WeightLive do
       :if={@form}
       id="weight-sheet"
       title={if @editing, do: "Gewicht ändern", else: "Wiegen eintragen"}
-      close={~p"/gewicht"}
+      close={~p"/weight"}
     >
       <.form
         for={@form}
@@ -215,7 +215,7 @@ defmodule PuppyLogWeb.WeightLive do
         {:noreply,
          socket
          |> put_flash(:info, "#{Weight.to_kg_string(entry.weight_grams)} kg gespeichert.")
-         |> push_patch(to: ~p"/gewicht")}
+         |> push_patch(to: ~p"/weight")}
 
       {:error, form} ->
         {:noreply, assign(socket, form: form)}

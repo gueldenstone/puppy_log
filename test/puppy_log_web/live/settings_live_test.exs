@@ -20,21 +20,21 @@ defmodule PuppyLogWeb.SettingsLiveTest do
   test "lists household members with their devices", %{conn: conn, user: user} do
     riv = user_fixture(%{name: "Riv"})
     subscription_fixture(riv)
-    {:ok, view, _html} = live(conn, ~p"/einstellungen")
+    {:ok, view, _html} = live(conn, ~p"/settings")
 
     assert has_element?(view, "#member-#{user.id}", "Keine Mitteilungen aktiviert")
     assert has_element?(view, "#member-#{riv.id}", "1 Gerät · Mitteilungen aktiv")
   end
 
   test "asks to add the app to the home screen in Safari", %{conn: conn} do
-    {:ok, view, _html} = live(conn, ~p"/einstellungen")
+    {:ok, view, _html} = live(conn, ~p"/settings")
 
     assert render_hook(view, "device_status", %{@iphone_status | "standalone" => false}) =~
              "Zum Home-Bildschirm"
   end
 
   test "registers this device", %{conn: conn, user: user} do
-    {:ok, view, _html} = live(conn, ~p"/einstellungen")
+    {:ok, view, _html} = live(conn, ~p"/settings")
     assert render_hook(view, "device_status", @iphone_status) =~ "Mitteilungen erlauben"
 
     keys = browser_keys()
@@ -54,7 +54,7 @@ defmodule PuppyLogWeb.SettingsLiveTest do
     subscription_fixture(user)
     Req.Test.stub(Push, &Plug.Conn.send_resp(&1, 201, ""))
 
-    {:ok, view, _html} = live(conn, ~p"/einstellungen")
+    {:ok, view, _html} = live(conn, ~p"/settings")
     view |> element("button[phx-value-target='me'][phx-value-delay='0']") |> render_click()
 
     assert render_async(view) =~ "1 von 1 an den Push-Dienst übergeben"

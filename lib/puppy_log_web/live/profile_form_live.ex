@@ -46,7 +46,7 @@ defmodule PuppyLogWeb.ProfileFormLive do
         phx-submit="save"
         class="flex flex-col gap-4"
       >
-        <.top_bar title={@page_title} close={if @profile, do: ~p"/profil", else: ~p"/"} />
+        <.top_bar title={@page_title} close={if @profile, do: ~p"/profile", else: ~p"/"} />
 
         <section class="flex flex-col items-center gap-2" phx-drop-target={@uploads.photo.ref}>
           <label for={@uploads.photo.ref} class="relative cursor-pointer">
@@ -142,7 +142,7 @@ defmodule PuppyLogWeb.ProfileFormLive do
         {:noreply,
          socket
          |> put_flash(:info, "Profil von #{profile.name} gespeichert.")
-         |> push_navigate(to: ~p"/profil")}
+         |> push_navigate(to: ~p"/profile")}
 
       {:error, form} ->
         if new_photo, do: Uploads.delete(new_photo)

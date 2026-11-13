@@ -16,7 +16,7 @@ defmodule PuppyLogWeb.ProfileLive do
     end
 
     case load(socket) do
-      %{assigns: %{profile: nil}} -> {:ok, push_navigate(socket, to: ~p"/profil/bearbeiten")}
+      %{assigns: %{profile: nil}} -> {:ok, push_navigate(socket, to: ~p"/profile/edit")}
       socket -> {:ok, assign(socket, page_title: socket.assigns.profile.name)}
     end
   end
@@ -28,7 +28,7 @@ defmodule PuppyLogWeb.ProfileLive do
       <.top_bar title="Profil" back={~p"/"}>
         <:actions>
           <.link
-            navigate={~p"/profil/bearbeiten"}
+            navigate={~p"/profile/edit"}
             class="flex min-h-11 items-center gap-1 px-1 text-[14px] font-semibold text-accent"
           >
             <.pl_icon name="edit" class="size-[18px]" /> Bearbeiten
@@ -88,7 +88,7 @@ defmodule PuppyLogWeb.ProfileLive do
       </.card>
 
       <.link
-        navigate={~p"/gewicht"}
+        navigate={~p"/weight"}
         class="flex items-center gap-3 rounded-2xl border border-line bg-card p-4 transition active:bg-canvas"
       >
         <span class="grid size-10 place-items-center rounded-full bg-accent-tint text-accent">

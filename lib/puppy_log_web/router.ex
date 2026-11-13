@@ -30,19 +30,19 @@ defmodule PuppyLogWeb.Router do
       # Each LiveView declares its own on_mount from PuppyLogWeb.LiveUserAuth
       live "/", TodayLive, :index
       live "/routine/:id", TodayLive, :routine
-      live "/eintragen", TodayLive, :log
-      live "/verlauf", PlaceholderLive, :history
-      live "/gesundheit", HealthLive
-      live "/lernen", PlaceholderLive, :learn
+      live "/log", TodayLive, :log
+      live "/history", PlaceholderLive, :history
+      live "/health", HealthLive
+      live "/learn", PlaceholderLive, :learn
 
-      live "/profil", ProfileLive
-      live "/profil/bearbeiten", ProfileFormLive
+      live "/profile", ProfileLive
+      live "/profile/edit", ProfileFormLive
 
-      live "/gewicht", WeightLive, :index
-      live "/gewicht/neu", WeightLive, :new
-      live "/gewicht/:id", WeightLive, :edit
+      live "/weight", WeightLive, :index
+      live "/weight/new", WeightLive, :new
+      live "/weight/:id", WeightLive, :edit
 
-      live "/einstellungen", SettingsLive
+      live "/settings", SettingsLive
 
       live "/sign-in", SignInLive
       live "/magic_link/:token", MagicLinkLive

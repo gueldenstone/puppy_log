@@ -29,13 +29,13 @@ defmodule PuppyLogWeb.HealthLive do
         <div class="flex items-center justify-between">
           <h2 class="text-[13px] font-medium text-muted">Gewicht</h2>
           <.link
-            navigate={~p"/gewicht/neu"}
+            navigate={~p"/weight/new"}
             class="-my-2 flex min-h-11 items-center text-[14px] font-semibold text-accent"
           >
             Wiegen eintragen
           </.link>
         </div>
-        <.link navigate={~p"/gewicht"} class="block" aria-label="Alle Gewichtseinträge anzeigen">
+        <.link navigate={~p"/weight"} class="block" aria-label="Alle Gewichtseinträge anzeigen">
           <div :if={@summary.latest} class="mt-0.5 flex flex-wrap items-baseline gap-x-2">
             <span class="font-display text-[28px] leading-[34px] font-semibold">
               {Weight.to_kg_string(@summary.latest.weight_grams)} kg

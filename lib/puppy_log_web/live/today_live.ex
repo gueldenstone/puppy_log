@@ -2,7 +2,7 @@ defmodule PuppyLogWeb.TodayLive do
   @moduledoc """
   Start screen „Heute“ (docs/design/Main.dc.html, entwuerfe/01): today's
   routines to tick off, the tick-off sheet (`/routine/:id`) and the quick
-  log buttons with the log sheet (`/eintragen`, `typ` presets the kind, see
+  log buttons with the log sheet (`/log`, `type` presets the kind, see
   `PuppyLogWeb.EventForm.preset/1`).
   """
 
@@ -23,10 +23,10 @@ defmodule PuppyLogWeb.TodayLive do
   @tick_ms 60_000
 
   @quick [
-    {"pipi", "Pipi", "pipi", "text-pipi", "bg-pipi-tint"},
-    {"kaka", "Kaka", "kaka", "text-kaka", "bg-kaka-tint"},
-    {"mahlzeit", "Mahlzeit", "bowl", "text-ink", "bg-mist"},
-    {"gassi", "Gassi", "gassi", "text-ink", "bg-mist"}
+    {"pee", "Pipi", "pipi", "text-pipi", "bg-pipi-tint"},
+    {"poo", "Kaka", "kaka", "text-kaka", "bg-kaka-tint"},
+    {"meal", "Mahlzeit", "bowl", "text-ink", "bg-mist"},
+    {"walk", "Gassi", "gassi", "text-ink", "bg-mist"}
   ]
 
   @impl true
@@ -63,7 +63,7 @@ defmodule PuppyLogWeb.TodayLive do
   end
 
   defp apply_action(socket, :log, params),
-    do: assign(socket, sheet: nil, log_preset: EventForm.preset(params["typ"]))
+    do: assign(socket, sheet: nil, log_preset: EventForm.preset(params["type"]))
 
   defp apply_action(socket, _action, _params), do: assign(socket, sheet: nil)
 
@@ -73,7 +73,7 @@ defmodule PuppyLogWeb.TodayLive do
     <Layouts.app flash={@flash} current_user={@current_user} tab={:today}>
       <header class="flex items-center gap-3 px-1">
         <.link
-          navigate={if @profile, do: ~p"/profil", else: ~p"/profil/bearbeiten"}
+          navigate={if @profile, do: ~p"/profile", else: ~p"/profile/edit"}
           class="flex min-w-0 flex-1 items-center gap-3 rounded-2xl transition active:opacity-70"
           aria-label={
             if @profile, do: "Profil von #{@profile.name} öffnen", else: "Welpenprofil anlegen"
@@ -88,7 +88,7 @@ defmodule PuppyLogWeb.TodayLive do
           </div>
         </.link>
         <.link
-          navigate={~p"/einstellungen"}
+          navigate={~p"/settings"}
           class="flex rounded-full transition active:opacity-70"
           aria-label={"Haushalt und Mitteilungen: " <> Enum.map_join(@household, ", ", &Format.user_name/1)}
         >
@@ -111,7 +111,7 @@ defmodule PuppyLogWeb.TodayLive do
             <p class="text-[14px] text-muted">Legt zuerst das Profil eures Welpen an.</p>
           </div>
         </div>
-        <.action_button navigate={~p"/profil/bearbeiten"}>Welpenprofil anlegen</.action_button>
+        <.action_button navigate={~p"/profile/edit"}>Welpenprofil anlegen</.action_button>
       </.card>
 
       <%= case @plan do %>
@@ -119,7 +119,7 @@ defmodule PuppyLogWeb.TodayLive do
           <.empty_state icon="clock" title="Wann zieht euer Welpe ein?">
             Tragt im Profil das Einzugsdatum ein, dann stehen hier ab diesem Tag eure Routinen zum Abhaken.
             <:action>
-              <.action_button variant={:secondary} navigate={~p"/profil/bearbeiten"}>
+              <.action_button variant={:secondary} navigate={~p"/profile/edit"}>
                 Einzugsdatum eintragen
               </.action_button>
             </:action>
@@ -133,7 +133,8 @@ defmodule PuppyLogWeb.TodayLive do
             Fütterung, Pipi-Runden, Schlaf: einmal festlegen, dann hakt ihr hier jeden Tag ab und bekommt Erinnerungen auf beide Handys.
             <:action>
               <%!-- plain path until the routines pages add the route --%>
-              <.action_button navigate="/routinen/neu">
+              <%!-- TODO(Task 9): ~p"/routines/new" once the route exists --%>
+              <.action_button navigate="/routines/new">
                 <.pl_icon name="plus" class="size-5" /> Erste Routine anlegen
               </.action_button>
             </:action>
@@ -174,8 +175,8 @@ defmodule PuppyLogWeb.TodayLive do
         <.section_label>Schnell eintragen</.section_label>
         <div class="grid grid-cols-4 gap-2">
           <.link
-            :for={{typ, label, icon, color, tint} <- @quick}
-            patch={~p"/eintragen?typ=#{typ}"}
+            :for={{type, label, icon, color, tint} <- @quick}
+            patch={~p"/log?type=#{type}"}
             class={[
               "flex min-h-[84px] flex-col items-center justify-center gap-1.5 rounded-[14px] border border-line bg-card text-[13px] font-semibold",
               "transition hover:-translate-y-px hover:shadow-[0_2px_8px_rgba(20,32,27,0.08)] active:scale-95",
@@ -188,7 +189,7 @@ defmodule PuppyLogWeb.TodayLive do
             {label}
           </.link>
         </div>
-        <.action_button variant={:secondary} patch={~p"/eintragen"}>
+        <.action_button variant={:secondary} patch={~p"/log"}>
           <.pl_icon name="plus" class="size-5" /> Eintragen
         </.action_button>
       </section>

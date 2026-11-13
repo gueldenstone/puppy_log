@@ -41,10 +41,10 @@ defmodule PuppyLogWeb.EventForm do
   @toggles Map.new(@potty_toggles, fn {param, field, _label, _icon} -> {param, field} end)
 
   @presets %{
-    "pipi" => %{kind: :potty, pee: true, location: :outside},
-    "kaka" => %{kind: :potty, poo: true, location: :outside},
-    "mahlzeit" => %{kind: :meal},
-    "gassi" => %{kind: :walk}
+    "pee" => %{kind: :potty, pee: true, location: :outside},
+    "poo" => %{kind: :potty, poo: true, location: :outside},
+    "meal" => %{kind: :meal},
+    "walk" => %{kind: :walk}
   }
 
   @fields [:kind, :pee, :poo, :nothing, :location, :name, :note]
@@ -55,11 +55,11 @@ defmodule PuppyLogWeb.EventForm do
   @failed "Das hat leider nicht geklappt. Bitte noch einmal versuchen."
 
   @doc """
-  The preset of a quick log button (`typ` query parameter): `"pipi"`,
-  `"kaka"`, `"mahlzeit"` or `"gassi"`. Anything else gives no preset.
+  The preset of a quick log button (`type` query parameter): `"pee"`,
+  `"poo"`, `"meal"` or `"walk"`. Anything else gives no preset.
   """
   @spec preset(String.t() | nil) :: map
-  def preset(typ), do: Map.get(@presets, typ, %{})
+  def preset(type), do: Map.get(@presets, type, %{})
 
   @impl true
   def update(assigns, socket) do

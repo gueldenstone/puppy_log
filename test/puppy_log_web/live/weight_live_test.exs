@@ -6,11 +6,11 @@ defmodule PuppyLogWeb.WeightLiveTest do
   setup :register_and_sign_in
 
   test "adds a weighing with German input", %{conn: conn, user: user} do
-    {:ok, view, _html} = live(conn, ~p"/gewicht/neu")
+    {:ok, view, _html} = live(conn, ~p"/weight/new")
     assert has_element?(view, "#weight-sheet[role], #weight-sheet section[role=dialog]")
 
     view |> form("#weight-form", form: %{weight_kg: "4,35"}) |> render_submit()
-    assert_patch(view, ~p"/gewicht")
+    assert_patch(view, ~p"/weight")
 
     # the confirmation toast hides itself, connection notices do not
     assert has_element?(view, ~s{#flash-info[phx-hook="AutoDismiss"]}, "4,35 kg gespeichert")
@@ -23,14 +23,14 @@ defmodule PuppyLogWeb.WeightLiveTest do
 
   test "shows the change while typing", %{conn: conn, user: user} do
     {:ok, _} = Puppy.add_weight(%{weight_kg: "7,8", measured_on: ~D[2026-11-01]}, actor: user)
-    {:ok, view, _html} = live(conn, ~p"/gewicht/neu")
+    {:ok, view, _html} = live(conn, ~p"/weight/new")
 
     html = view |> form("#weight-form", form: %{weight_kg: "8,15"}) |> render_change()
     assert html =~ "+350 g seit dem letzten Mal"
   end
 
   test "explains invalid input", %{conn: conn} do
-    {:ok, view, _html} = live(conn, ~p"/gewicht/neu")
+    {:ok, view, _html} = live(conn, ~p"/weight/new")
 
     html = view |> form("#weight-form", form: %{weight_kg: "viel"}) |> render_submit()
     assert html =~ "bitte als Zahl eingeben"
@@ -39,11 +39,11 @@ defmodule PuppyLogWeb.WeightLiveTest do
   test "edits and deletes entries", %{conn: conn, user: user} do
     {:ok, entry} = Puppy.add_weight(%{weight_kg: "5"}, actor: user)
 
-    {:ok, view, html} = live(conn, ~p"/gewicht/#{entry.id}")
+    {:ok, view, html} = live(conn, ~p"/weight/#{entry.id}")
     assert html =~ "Gewicht ändern"
 
     view |> form("#weight-form", form: %{weight_kg: "5,1"}) |> render_submit()
-    assert_patch(view, ~p"/gewicht")
+    assert_patch(view, ~p"/weight")
     assert [%{weight_grams: 5100}] = Puppy.list_weights!(actor: user)
 
     render_async(view)
@@ -53,7 +53,7 @@ defmodule PuppyLogWeb.WeightLiveTest do
 
   test "lists entries with delta and author, live", %{conn: conn, user: user} do
     {:ok, _} = Puppy.add_weight(%{weight_kg: "4", measured_on: ~D[2026-10-01]}, actor: user)
-    {:ok, view, _html} = live(conn, ~p"/gewicht")
+    {:ok, view, _html} = live(conn, ~p"/weight")
     assert render_async(view) =~ "Ab zwei Einträgen"
 
     riv = user_fixture(%{name: "Riv"})

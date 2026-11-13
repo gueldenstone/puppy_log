@@ -21,7 +21,7 @@ defmodule PuppyLogWeb.EventFormTest do
 
   test "Pipi quick button preselects pee outside and shows the auto match", %{conn: conn} do
     pin_local(~T[10:05:00])
-    {:ok, view, _html} = live(conn, ~p"/eintragen?typ=pipi")
+    {:ok, view, _html} = live(conn, ~p"/log?type=pee")
 
     assert has_element?(view, ~s{#event-form button[aria-pressed="true"]}, "Lösen")
     assert has_element?(view, ~s{#event-form button[aria-pressed="true"]}, "Pipi")
@@ -33,7 +33,7 @@ defmodule PuppyLogWeb.EventFormTest do
 
   test "adding Kaka to the same entry", %{conn: conn, user: user} do
     pin_local(~T[10:05:00])
-    {:ok, view, _html} = live(conn, ~p"/eintragen?typ=pipi")
+    {:ok, view, _html} = live(conn, ~p"/log?type=pee")
 
     view |> element(~s{#event-form button[phx-value-field="poo"]}) |> render_click()
     view |> form("#event-form-form") |> render_submit()
@@ -47,7 +47,7 @@ defmodule PuppyLogWeb.EventFormTest do
 
   test "inside shows the accident hint and no routine area", %{conn: conn, user: user} do
     pin_local(~T[10:05:00])
-    {:ok, view, _html} = live(conn, ~p"/eintragen?typ=pipi")
+    {:ok, view, _html} = live(conn, ~p"/log?type=pee")
 
     view |> element(~s{#event-form button[phx-value-location="inside"]}) |> render_click()
 
@@ -61,7 +61,7 @@ defmodule PuppyLogWeb.EventFormTest do
 
   test "Nichts gemacht clears pee and poo and disables Drinnen", %{conn: conn} do
     pin_local(~T[10:05:00])
-    {:ok, view, _html} = live(conn, ~p"/eintragen?typ=pipi")
+    {:ok, view, _html} = live(conn, ~p"/log?type=pee")
 
     view |> element(~s{#event-form button[phx-value-field="nothing"]}) |> render_click()
 
@@ -76,7 +76,7 @@ defmodule PuppyLogWeb.EventFormTest do
 
   test "outside tolerance offers a choice", %{conn: conn, user: user} do
     pin_local(~T[10:40:00])
-    {:ok, view, _html} = live(conn, ~p"/eintragen?typ=pipi")
+    {:ok, view, _html} = live(conn, ~p"/log?type=pee")
     first = occurrence(user, "Pipi-Runde")
     second = occurrence(user, "Mittags-Pipi")
 
@@ -106,7 +106,7 @@ defmodule PuppyLogWeb.EventFormTest do
     user: user
   } do
     pin_local(~T[10:05:00])
-    {:ok, view, _html} = live(conn, ~p"/eintragen?typ=pipi")
+    {:ok, view, _html} = live(conn, ~p"/log?type=pee")
     first = occurrence(user, "Pipi-Runde")
 
     view |> element("#event-form-routine button", "ändern") |> render_click()
@@ -121,7 +121,7 @@ defmodule PuppyLogWeb.EventFormTest do
 
   test "the routine area follows the time choice", %{conn: conn} do
     pin_local(~T[10:20:00])
-    {:ok, view, _html} = live(conn, ~p"/eintragen?typ=pipi")
+    {:ok, view, _html} = live(conn, ~p"/log?type=pee")
     refute render(view) =~ "Erfüllt:"
 
     view |> element(~s{#event-form button[phx-value-choice="15"]}) |> render_click()
@@ -131,7 +131,7 @@ defmodule PuppyLogWeb.EventFormTest do
   test "Anderes requires a name and offers recent names", %{conn: conn, user: user} do
     pin_local(~T[09:00:00])
     {:ok, _} = Daily.log_event(%{kind: :other, name: "Krallen geschnitten"}, actor: user)
-    {:ok, view, _html} = live(conn, ~p"/eintragen")
+    {:ok, view, _html} = live(conn, ~p"/log")
 
     view |> element(~s{#event-form button[phx-value-kind="other"]}) |> render_click()
     assert render(view) =~ "Was genau?"
@@ -150,7 +150,7 @@ defmodule PuppyLogWeb.EventFormTest do
 
   test "vor 20 Min stores 20 minutes earlier", %{conn: conn, user: user} do
     pin_local(~T[10:05:00])
-    {:ok, view, _html} = live(conn, ~p"/eintragen?typ=mahlzeit")
+    {:ok, view, _html} = live(conn, ~p"/log?type=meal")
 
     view |> element(~s{#event-form button[phx-value-choice="20"]}) |> render_click()
     view |> form("#event-form-form", %{note: "Halbe Portion"}) |> render_submit()
@@ -160,8 +160,8 @@ defmodule PuppyLogWeb.EventFormTest do
     assert local_time(event.occurred_at) == ~T[09:45:00]
   end
 
-  test "unknown typ is ignored", %{conn: conn} do
-    {:ok, view, _html} = live(conn, ~p"/eintragen?typ=quatsch")
+  test "unknown type is ignored", %{conn: conn} do
+    {:ok, view, _html} = live(conn, ~p"/log?type=nonsense")
 
     assert has_element?(view, "#event-form [role=dialog]", "Ereignis eintragen")
     refute has_element?(view, ~s{#event-form button[phx-value-kind][aria-pressed="true"]})
@@ -169,7 +169,7 @@ defmodule PuppyLogWeb.EventFormTest do
 
   test "Uhrzeit rejects a time in the future", %{conn: conn, user: user} do
     pin_local(~T[10:05:00])
-    {:ok, view, _html} = live(conn, ~p"/eintragen?typ=gassi")
+    {:ok, view, _html} = live(conn, ~p"/log?type=walk")
 
     view |> element(~s{#event-form button[phx-value-choice="custom"]}) |> render_click()
     html = view |> form("#event-form-form", %{custom: "2026-11-12T11:00"}) |> render_submit()
@@ -205,7 +205,7 @@ defmodule PuppyLogWeb.EventFormTest do
 
   test "Nichts gemacht after Drinnen brings the routine area back", %{conn: conn} do
     pin_local(~T[10:05:00])
-    {:ok, view, _html} = live(conn, ~p"/eintragen?typ=pipi")
+    {:ok, view, _html} = live(conn, ~p"/log?type=pee")
 
     view |> element(~s{#event-form button[phx-value-location="inside"]}) |> render_click()
     refute has_element?(view, "#event-form-routine")

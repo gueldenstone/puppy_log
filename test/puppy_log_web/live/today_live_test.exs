@@ -43,7 +43,7 @@ defmodule PuppyLogWeb.TodayLiveTest do
     user_fixture(%{name: "Riv"})
     {:ok, view, _html} = live(conn, ~p"/")
 
-    assert has_element?(view, ~s{a[href="/einstellungen"][aria-label*="Riv"]})
+    assert has_element?(view, ~s{a[href="/settings"][aria-label*="Riv"]})
   end
 
   describe "routines" do
@@ -270,15 +270,15 @@ defmodule PuppyLogWeb.TodayLiveTest do
     test "quick tiles link to the log sheet", %{conn: conn} do
       {:ok, view, _html} = live(conn, ~p"/")
 
-      for typ <- ~w(pipi kaka mahlzeit gassi) do
-        assert has_element?(view, ~s{a[href="/eintragen?typ=#{typ}"]})
+      for type <- ~w(pee poo meal walk) do
+        assert has_element?(view, ~s{a[href="/log?type=#{type}"]})
       end
 
-      assert has_element?(view, ~s{a[href="/eintragen"]}, "Eintragen")
-      refute has_element?(view, ~s{a[href="/gewicht/neu"]})
+      assert has_element?(view, ~s{a[href="/log"]}, "Eintragen")
+      refute has_element?(view, ~s{a[href="/weight/new"]})
 
-      view |> element(~s{a[href="/eintragen?typ=pipi"]}) |> render_click()
-      assert_patch(view, ~p"/eintragen?typ=pipi")
+      view |> element(~s{a[href="/log?type=pee"]}) |> render_click()
+      assert_patch(view, ~p"/log?type=pee")
     end
   end
 
@@ -287,7 +287,7 @@ defmodule PuppyLogWeb.TodayLiveTest do
     {:ok, view, _html} = live(conn, ~p"/")
 
     assert render(view) =~ "Tragt im Profil das Einzugsdatum ein"
-    assert has_element?(view, ~s{a[href="/profil/bearbeiten"]})
+    assert has_element?(view, ~s{a[href="/profile/edit"]})
   end
 
   test "without routines asks to set up the daily plan", %{conn: conn, user: user} do
@@ -297,7 +297,7 @@ defmodule PuppyLogWeb.TodayLiveTest do
     {:ok, view, _html} = live(conn, ~p"/")
 
     assert render(view) =~ "Legt euren Tagesablauf an"
-    assert has_element?(view, ~s{a[href="/routinen/neu"]})
+    assert has_element?(view, ~s{a[href="/routines/new"]})
   end
 
   defp pin_local(time), do: pin_clock(Clock.local_datetime(~D[2026-11-12], time))
