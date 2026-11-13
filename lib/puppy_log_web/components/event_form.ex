@@ -100,11 +100,12 @@ defmodule PuppyLogWeb.EventForm do
     blank
     |> Map.merge(Map.take(preset, @fields))
     |> Map.merge(initial_time(date))
-    |> Map.merge(%{routine: nil, initial_custom: nil})
+    |> Map.merge(%{routine: nil, initial_custom: nil, own_occurrence: nil})
   end
 
   defp initial_state(event, _assigns, actor) do
-    event = Ash.load!(event, :occurrence, actor: actor)
+    # kept in its own assign: the parent may re-render with the unloaded event
+    own = Ash.load!(event, :occurrence, actor: actor).occurrence
     custom = TimeChoice.to_input(event.occurred_at)
 
     event
@@ -112,12 +113,12 @@ defmodule PuppyLogWeb.EventForm do
     |> Map.update!(:name, &(&1 || ""))
     |> Map.update!(:note, &(&1 || ""))
     |> Map.merge(%{
-      event: event,
+      own_occurrence: own,
       choice: "custom",
       custom: custom,
       initial_custom: custom,
       # update_event defaults to "auto": send the current link explicitly
-      routine: if(event.occurrence, do: event.occurrence.id, else: "none")
+      routine: if(own, do: own.id, else: "none")
     })
   end
 
@@ -158,7 +159,7 @@ defmodule PuppyLogWeb.EventForm do
         event
         |> Map.merge(%{occurred_at: at, event_id: assigns.event && assigns.event.id})
         |> Daily.match_preview(actor: assigns.current_user)
-        |> with_own_link(assigns.event, event)
+        |> with_own_link(assigns.own_occurrence, event)
 
       :error ->
         @no_preview
@@ -166,14 +167,14 @@ defmodule PuppyLogWeb.EventForm do
   end
 
   # An explicit link to an occurrence of another day stays choosable while it fits.
-  defp with_own_link(preview, %{occurrence: %Occurrence{} = own}, event) do
+  defp with_own_link(preview, %Occurrence{} = own, event) do
     if Matching.fulfils?(own.kind, event) and
          not Enum.any?(preview.candidates, &(&1.id == own.id)),
        do: %{preview | candidates: preview.candidates ++ [own]},
        else: preview
   end
 
-  defp with_own_link(preview, _event, _attrs), do: preview
+  defp with_own_link(preview, _own, _event), do: preview
 
   # An unchanged time of an edited event keeps its exact (sub-minute) value.
   defp occurred_at(%{
@@ -515,7 +516,7 @@ defmodule PuppyLogWeb.EventForm do
 
   def handle_event("toggle", %{"field" => value}, socket) do
     case Map.fetch(@toggles, value) do
-      {:ok, field} -> {:noreply, socket |> toggle(field) |> changed()}
+      {:ok, field} -> {:noreply, socket |> toggle(field) |> changed() |> refresh_preview()}
       :error -> {:noreply, socket}
     end
   end

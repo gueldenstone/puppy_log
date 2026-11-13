@@ -203,13 +203,33 @@ defmodule PuppyLogWeb.EventFormTest do
     assert html =~ ~r/phx-value-choice="now"[^>]*aria-pressed="true"/
   end
 
+  test "Nichts gemacht after Drinnen brings the routine area back", %{conn: conn} do
+    pin_local(~T[10:05:00])
+    {:ok, view, _html} = live(conn, ~p"/eintragen?typ=pipi")
+
+    view |> element(~s{#event-form button[phx-value-location="inside"]}) |> render_click()
+    refute has_element?(view, "#event-form-routine")
+
+    view |> element(~s{#event-form button[phx-value-field="nothing"]}) |> render_click()
+    assert has_element?(view, "#event-form-routine", "Erfüllt: Pipi-Runde (10:00)")
+  end
+
   describe "editing" do
     defmodule Host do
       use PuppyLogWeb, :live_view
 
       def mount(_params, %{"event_id" => id, "user" => user}, socket) do
         {:ok, event} = PuppyLog.Daily.get_event(id, actor: user)
-        {:ok, assign(socket, event: event, user: user)}
+        {:ok, assign(socket, event: event, user: user, rev: 0)}
+      end
+
+      # re-renders the component with a freshly read (unloaded) event;
+      # `rev` changes so the component is updated
+      def handle_info(:reload, socket) do
+        {:ok, event} =
+          PuppyLog.Daily.get_event(socket.assigns.event.id, actor: socket.assigns.user)
+
+        {:noreply, socket |> assign(event: event) |> update(:rev, &(&1 + 1))}
       end
 
       def render(assigns) do
@@ -218,6 +238,7 @@ defmodule PuppyLogWeb.EventFormTest do
           module={PuppyLogWeb.EventForm}
           id="event-form"
           event={@event}
+          rev={@rev}
           current_user={@user}
           return_to="/"
         />
@@ -252,6 +273,42 @@ defmodule PuppyLogWeb.EventFormTest do
       assert local_time(updated.occurred_at) == local_time(event.occurred_at)
       assert occurrence(user, "Mittags-Pipi").event_id == event.id
       assert occurrence(user, "Pipi-Runde").status == :open
+    end
+
+    @tag :capture_log
+    test "keeps a link to another day's occurrence across parent re-renders", %{
+      conn: conn,
+      user: user
+    } do
+      pin_local(~T[10:05:00])
+      yesterday_potty = occurrence(user, "Pipi-Runde")
+
+      pin_clock(Clock.local_datetime(~D[2026-11-13], ~T[09:00:00]))
+
+      {:ok, event} =
+        Daily.log_event(
+          %{kind: :potty, pee: true, location: :outside, routine: yesterday_potty.id},
+          actor: user
+        )
+
+      {:ok, view, _html} =
+        live_isolated(conn, Host, session: %{"event_id" => event.id, "user" => user})
+
+      send(view.pid, :reload)
+      # wait until the host handled it, then let the client see the new diff
+      :sys.get_state(view.pid)
+      render(view)
+
+      assert has_element?(
+               view,
+               ~s{#event-form-routine input[value="#{yesterday_potty.id}"][checked]}
+             )
+
+      Process.flag(:trap_exit, true)
+      catch_exit(view |> form("#event-form-form", %{note: "Gestern verlinkt"}) |> render_submit())
+
+      assert %{note: "Gestern verlinkt"} = Daily.get_event!(event.id, actor: user)
+      assert occurrence(user, "Pipi-Runde").event_id == event.id
     end
   end
 
