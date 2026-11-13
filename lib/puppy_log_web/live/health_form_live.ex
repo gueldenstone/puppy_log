@@ -232,7 +232,7 @@ defmodule PuppyLogWeb.HealthFormLive do
           label="Impfstoff/Charge"
           autocomplete="off"
           maxlength="120"
-          placeholder="Optional, steht auf dem Aufkleber im Impfpass"
+          placeholder="Optional, vom Aufkleber im Impfpass"
         />
 
         <.input

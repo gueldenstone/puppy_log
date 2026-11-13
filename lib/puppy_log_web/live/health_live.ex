@@ -164,7 +164,7 @@ defmodule PuppyLogWeb.HealthLive do
           field={@complete_form[:batch]}
           label="Impfstoff/Charge"
           autocomplete="off"
-          placeholder="Optional, steht auf dem Aufkleber im Impfpass"
+          placeholder="Optional, vom Aufkleber im Impfpass"
         />
         <.action_button type="submit" phx-disable-with="Speichert …">
           <.pl_icon name="check" class="size-5" /> Erledigt
