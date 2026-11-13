@@ -145,6 +145,11 @@ defmodule PuppyLog.Daily.Event do
       change LinkRoutine
     end
 
+    update :record_link_mode do
+      description "Internal: corrects how the event is linked after linking (see LinkRoutine)."
+      accept [:link_mode]
+    end
+
     destroy :destroy do
       primary? true
       require_atomic? false
@@ -242,6 +247,16 @@ defmodule PuppyLog.Daily.Event do
     attribute :note, :string do
       public? true
       constraints max_length: 500, trim?: true
+    end
+
+    attribute :link_mode, :atom do
+      description """
+      How the event is linked to its occurrence: `:completed` (the event ticked
+      it off) or `:attached` (it was ticked off by hand before). Nil: unlinked.
+      """
+
+      public? true
+      constraints one_of: [:completed, :attached]
     end
 
     create_timestamp :inserted_at

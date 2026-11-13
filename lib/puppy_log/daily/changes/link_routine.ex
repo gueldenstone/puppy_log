@@ -13,9 +13,10 @@ defmodule PuppyLog.Daily.Changes.LinkRoutine do
   occurrence that was already ticked off by hand keeps its recorded time and
   only gets the `event_id`.
 
-  On update and destroy the previous link is released first: an occurrence
-  the event completed is reopened, one it was only attached to keeps its tick
-  and loses the `event_id`. While choosing, occurrences linked to the event
+  The event stores how it is linked in `link_mode` (`:completed` or
+  `:attached`). On update and destroy the previous link is released first: an
+  occurrence the event completed is reopened, one it was only attached to
+  keeps its tick and loses the `event_id`. While choosing, occurrences linked to the event
   itself count as free.
 
   The choice is validated inside the transaction (reads only); all occurrence
@@ -110,24 +111,43 @@ defmodule PuppyLog.Daily.Changes.LinkRoutine do
       |> Ash.Query.for_read(:on_date, %{date: DateTime.to_date(local)})
       |> Ash.read!(authorize?: false)
 
-    case choices(occurrences, event(changeset), DateTime.to_naive(local), event_id(changeset)) do
-      %{auto: nil} -> nil
-      %{auto: occurrence} -> occurrence.id
-    end
+    choices(occurrences, event(changeset), DateTime.to_naive(local), event_id(changeset)).auto
   end
 
   defp explicit_target(changeset, id) do
     with {:ok, occurrence} <- Ash.get(Occurrence, id, authorize?: false),
          true <- free?(occurrence, event_id(changeset)),
          true <- Matching.fulfils?(occurrence.kind, event(changeset)) do
-      put_target(changeset, occurrence.id)
+      put_target(changeset, occurrence)
     else
       _ -> Ash.Changeset.add_error(changeset, field: :routine, message: @invalid)
     end
   end
 
-  defp put_target(changeset, target),
-    do: Ash.Changeset.set_context(changeset, %{@target => target})
+  # The event remembers how it is linked, so releasing never has to guess
+  # whether it completed the occurrence or was attached to a tick by hand.
+  defp put_target(changeset, nil) do
+    changeset
+    |> Ash.Changeset.set_context(%{@target => nil})
+    |> Ash.Changeset.force_change_attribute(:link_mode, nil)
+  end
+
+  defp put_target(changeset, occurrence) do
+    changeset
+    |> Ash.Changeset.set_context(%{@target => occurrence.id})
+    |> Ash.Changeset.force_change_attribute(:link_mode, expected_mode(changeset, occurrence))
+  end
+
+  # The mode the link will have once the previous link is released.
+  defp expected_mode(_changeset, %{status: :open}), do: :completed
+
+  defp expected_mode(changeset, %{event_id: id}) when not is_nil(id) do
+    if id == event_id(changeset) and changeset.data.link_mode != :attached,
+      do: :completed,
+      else: :attached
+  end
+
+  defp expected_mode(_changeset, _ticked_by_hand), do: :attached
 
   defp event(changeset) do
     %{
@@ -143,50 +163,42 @@ defmodule PuppyLog.Daily.Changes.LinkRoutine do
   defp link(changeset, {:ok, event}) do
     actor = changeset.context[:private][:actor]
 
-    with :ok <- release(event.id, changeset.data.occurred_at),
-         :ok <- fulfil(changeset.context[@target], event, actor) do
-      {:ok, event}
+    with :ok <- release(event.id, changeset.data.link_mode),
+         {:ok, mode} <- fulfil(changeset.context[@target], event, actor) do
+      record_mode(event, mode)
     end
   end
 
   defp link(_changeset, result), do: result
 
   defp unlink_destroyed(_changeset, {:ok, event} = result) do
-    with :ok <- release(event.id, event.occurred_at) do
+    with :ok <- release(event.id, event.link_mode) do
       result
     end
   end
 
   defp unlink_destroyed(_changeset, result), do: result
 
-  defp release(event_id, occurred_at) do
+  defp release(event_id, mode) do
     Occurrence
     |> Ash.Query.filter(event_id == ^event_id)
     |> Ash.read!(authorize?: false)
     |> Enum.reduce_while(:ok, fn occurrence, :ok ->
-      case release_one(occurrence, occurred_at) do
+      case release_one(occurrence, mode) do
         {:ok, _occurrence} -> {:cont, :ok}
         {:error, error} -> {:halt, {:error, error}}
       end
     end)
   end
 
-  # Completed by the event (done at the event's time) → open again;
-  # ticked by hand and only attached → keep the tick.
-  defp release_one(occurrence, occurred_at) do
-    if completed_by_event?(occurrence, occurred_at),
-      do: reopen(occurrence),
-      else: attach(occurrence, nil)
-  end
-
-  defp completed_by_event?(%{done_at: %DateTime{} = done_at}, %DateTime{} = occurred_at),
-    do: DateTime.compare(done_at, occurred_at) == :eq
-
-  defp completed_by_event?(_occurrence, _occurred_at), do: false
+  # Completed by the event → open again; attached to a tick by hand → keep the tick.
+  defp release_one(occurrence, :attached), do: attach(occurrence, nil)
+  defp release_one(occurrence, _completed), do: reopen(occurrence)
 
   defp reopen(occurrence), do: Daily.reopen_occurrence(occurrence, authorize?: false)
 
-  defp fulfil(nil, _event, _actor), do: :ok
+  # Returns the mode of the link that was made (nil: none).
+  defp fulfil(nil, _event, _actor), do: {:ok, nil}
 
   defp fulfil(id, event, actor) do
     case Ash.get(Occurrence, id, authorize?: false) do
@@ -196,12 +208,12 @@ defmodule PuppyLog.Daily.Changes.LinkRoutine do
       # done or skipped by someone else meanwhile: the event stays unlinked
       {:ok, occurrence} ->
         if ticked_by_hand?(occurrence),
-          do: occurrence |> attach(event.id) |> ok(),
-          else: :ok
+          do: occurrence |> attach(event.id) |> mode(:attached),
+          else: {:ok, nil}
 
       # deleted meanwhile (e.g. the routine was archived)
       {:error, _error} ->
-        :ok
+        {:ok, nil}
     end
   end
 
@@ -212,8 +224,8 @@ defmodule PuppyLog.Daily.Changes.LinkRoutine do
       authorize?: false
     )
     |> case do
-      {:error, error} -> if already_done?(error), do: :ok, else: {:error, error}
-      result -> ok(result)
+      {:error, error} -> if already_done?(error), do: {:ok, nil}, else: {:error, error}
+      result -> mode(result, :completed)
     end
   end
 
@@ -223,8 +235,18 @@ defmodule PuppyLog.Daily.Changes.LinkRoutine do
     |> Ash.update(authorize?: false)
   end
 
-  defp ok({:ok, _record}), do: :ok
-  defp ok({:error, _error} = error), do: error
+  defp mode({:ok, _record}, mode), do: {:ok, mode}
+  defp mode({:error, _error} = error, _mode), do: error
+
+  # Corrects the mode chosen inside the transaction when the occurrence
+  # changed meanwhile (or could not be linked).
+  defp record_mode(%{link_mode: mode} = event, mode), do: {:ok, event}
+
+  defp record_mode(event, mode) do
+    event
+    |> Ash.Changeset.for_update(:record_link_mode, %{link_mode: mode})
+    |> Ash.update(authorize?: false)
+  end
 
   defp already_done?(%{errors: errors}) when is_list(errors),
     do: Enum.any?(errors, &already_done?/1)

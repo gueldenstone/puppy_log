@@ -50,6 +50,18 @@ defmodule PuppyLog.Daily.EventTest do
     |> Enum.find(&(&1.planned_start == starts_at))
   end
 
+  defp meal_ticked_by_hand(actor, ticked_by, time) do
+    meal = routine_since(actor, @today, :meal, time, "Futter")
+    :ok = Daily.ensure_day(@today)
+
+    occ =
+      Daily.list_occurrences_on!(@today, actor: actor)
+      |> Enum.find(&(&1.routine_id == meal.id))
+
+    {:ok, ticked} = Daily.complete_occurrence(occ, %{done_at: at(time)}, actor: ticked_by)
+    ticked
+  end
+
   defp potty(attrs), do: Map.merge(%{kind: :potty, pee: true, location: :outside}, attrs)
 
   defp errors_on(error, field) do
@@ -73,6 +85,7 @@ defmodule PuppyLog.Daily.EventTest do
       assert occurrence(lukas, ~T[12:00:00]).status == :open
       assert Ash.load!(event, :occurrence, actor: lukas).occurrence.id == occ.id
       assert event.created_by_id == lukas.id
+      assert event.link_mode == :completed
     end
 
     test "pee and poo in one entry fulfil one routine only", %{lukas: lukas} do
@@ -238,6 +251,43 @@ defmodule PuppyLog.Daily.EventTest do
       assert kept.status == :done
       assert kept.event_id == nil
       assert kept.done_at == ticked.done_at
+    end
+
+    test "a hand tick at exactly the event's time stays when the event is deleted",
+         %{lukas: lukas, riv: riv} do
+      occ = meal_ticked_by_hand(lukas, riv, ~T[08:00:00])
+
+      {:ok, event} = Daily.log_event(%{kind: :meal, occurred_at: at(~T[08:00:00])}, actor: lukas)
+      assert event.link_mode == :attached
+      assert Daily.get_occurrence!(occ.id, actor: lukas).event_id == event.id
+
+      :ok = Daily.delete_event(event, actor: lukas)
+
+      kept = Daily.get_occurrence!(occ.id, actor: lukas)
+      assert kept.status == :done
+      assert kept.event_id == nil
+      assert kept.done_at == occ.done_at
+      assert kept.completed_by_id == riv.id
+    end
+
+    test "updating an event attached to a hand tick keeps the tick", %{lukas: lukas, riv: riv} do
+      occ = meal_ticked_by_hand(lukas, riv, ~T[08:00:00])
+      {:ok, event} = Daily.log_event(%{kind: :meal, occurred_at: at(~T[08:00:00])}, actor: lukas)
+
+      {:ok, event} = Daily.update_event(event, %{note: "Nassfutter"}, actor: lukas)
+      assert event.link_mode == :attached
+
+      kept = Daily.get_occurrence!(occ.id, actor: lukas)
+      assert kept.event_id == event.id
+      assert {kept.status, kept.done_at, kept.completed_by_id} == {:done, occ.done_at, riv.id}
+
+      # moved away from the routine: the link goes, the tick stays
+      {:ok, event} = Daily.update_event(event, %{occurred_at: at(~T[11:00:00])}, actor: lukas)
+      assert event.link_mode == nil
+
+      kept = Daily.get_occurrence!(occ.id, actor: lukas)
+      assert kept.event_id == nil
+      assert {kept.status, kept.done_at, kept.completed_by_id} == {:done, occ.done_at, riv.id}
     end
 
     test "requires a signed in user" do
