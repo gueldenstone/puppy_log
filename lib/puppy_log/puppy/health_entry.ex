@@ -37,11 +37,31 @@ defmodule PuppyLog.Puppy.HealthEntry do
     {done, open} = Enum.split_with(entries, &(&1.status == :done))
 
     open =
-      Enum.sort_by(open, &{Date.to_gregorian_days(&1.due_on), &1.due_time || ~T[00:00:00]}, :asc)
+      Enum.sort(open, fn a, b ->
+        case compare_due(a, b) do
+          :lt -> true
+          :gt -> false
+          :eq -> DateTime.compare(a.inserted_at, b.inserted_at) != :gt
+        end
+      end)
 
-    done = Enum.sort_by(done, &Date.to_gregorian_days(&1.done_on || &1.due_on), :desc)
+    done =
+      Enum.sort(done, fn a, b ->
+        case Date.compare(a.done_on || a.due_on, b.done_on || b.due_on) do
+          :gt -> true
+          :lt -> false
+          :eq -> DateTime.compare(a.inserted_at, b.inserted_at) != :gt
+        end
+      end)
 
     open ++ done
+  end
+
+  # Due date first, then time of day (entries without a time come first).
+  defp compare_due(a, b) do
+    with :eq <- Date.compare(a.due_on, b.due_on) do
+      Time.compare(a.due_time || ~T[00:00:00], b.due_time || ~T[00:00:00])
+    end
   end
 
   sqlite do

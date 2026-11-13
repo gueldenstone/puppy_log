@@ -50,7 +50,7 @@ defmodule PuppyLog.Repo.Migrations.AddHealthEntries do
     end
 
     alter table(:daily_settings) do
-      add :health_reminder_days, :bigint, null: false
+      add :health_reminder_days, :bigint, null: false, default: 2
     end
   end
 

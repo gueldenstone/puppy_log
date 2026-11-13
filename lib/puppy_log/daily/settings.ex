@@ -13,6 +13,7 @@ defmodule PuppyLog.Daily.Settings do
   sqlite do
     table "daily_settings"
     repo PuppyLog.Repo
+    migration_defaults health_reminder_days: "2"
   end
 
   actions do
